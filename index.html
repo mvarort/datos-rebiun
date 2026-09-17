@@ -1,0 +1,387 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de indicadores REBIUN</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+
+<body>
+
+<main>
+
+    <h1>Selector de indicadores REBIUN</h1>
+
+    <p class="intro">
+        Seleccione las bibliotecas, indicadores y años que desea consultar.
+    </p>
+
+
+    <!-- ==================================================
+         BIBLIOTECAS
+         ================================================== -->
+
+    <section class="panel panel-bloque">
+
+        <h2>1. Bibliotecas</h2>
+
+        <div class="segmentadores">
+
+            <div class="campo">
+
+                <label for="comunidad">
+                    Comunidad autónoma
+                </label>
+
+                <select id="comunidad">
+
+                    <option value="">
+                        Todas
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="campo">
+
+                <label for="modalidad">
+                    Modalidad
+                </label>
+
+                <select id="modalidad">
+
+    <option value="">
+        Todas
+    </option>
+
+</select>
+
+            </div>
+
+
+            <div class="campo">
+
+                <label for="titularidad">
+                    Titularidad
+                </label>
+
+                <select id="titularidad">
+
+    <option value="">
+        Todas
+    </option>
+
+</select>
+
+            </div>
+
+        </div>
+
+
+        <div class="bloque-lista">
+
+            <div class="cabecera-lista">
+
+                <strong>Bibliotecas</strong>
+
+                <div>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="marcar-bibliotecas">
+                        Marcar visibles
+                    </button>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="desmarcar-bibliotecas">
+                        Desmarcar visibles
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <input
+                type="search"
+                id="buscar-biblioteca"
+                class="buscador"
+                placeholder="Buscar biblioteca...">
+
+
+            <div
+                id="lista-bibliotecas"
+                class="lista-checks lista-bibliotecas">
+            </div>
+
+
+            <div
+                id="contador-bibliotecas"
+                class="contador">
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         INDICADORES
+         ================================================== -->
+
+    <section class="panel panel-bloque">
+
+        <h2>2. Indicadores</h2>
+
+
+        <div class="segmentadores">
+
+            <div class="campo">
+
+                <label for="eje">
+                    Eje
+                </label>
+
+                <select id="eje">
+
+                    <option value="">
+                        Todos los ejes
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="campo">
+
+                <label for="apartado">
+                    Apartado
+                </label>
+
+                <select id="apartado">
+
+                    <option value="">
+                        Todos los apartados
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div class="bloque-lista">
+
+            <div class="cabecera-lista">
+
+                <strong>Indicadores</strong>
+
+                <div>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="marcar-indicadores">
+                        Marcar visibles
+                    </button>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="desmarcar-indicadores">
+                        Desmarcar visibles
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <input
+                type="search"
+                id="buscar-indicador"
+                class="buscador"
+                placeholder="Buscar por código o nombre...">
+
+
+            <div
+                id="lista-indicadores"
+                class="lista-checks lista-indicadores">
+            </div>
+
+
+            <div
+                id="contador-indicadores"
+                class="contador">
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         AÑOS
+         ================================================== -->
+
+    <section class="panel panel-bloque">
+
+        <h2>3. Años</h2>
+
+        <div class="bloque-lista bloque-anios">
+
+            <div class="cabecera-lista">
+
+                <strong>Años disponibles</strong>
+
+                <div>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="todos-anios">
+                        Todos
+                    </button>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="ningun-anio">
+                        Ninguno
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="lista-anios"
+                class="lista-checks lista-anios">
+            </div>
+
+
+            <div
+                id="contador-anios"
+                class="contador">
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         ORGANIZACIÓN
+         ================================================== -->
+
+    <section class="panel panel-bloque">
+
+        <h2>4. Organización del resultado</h2>
+
+        <div class="organizacion">
+
+            <div class="campo">
+
+                <label for="filas">
+                    Filas
+                </label>
+
+                <select id="filas">
+
+                    <option value="Biblioteca">
+                        Biblioteca
+                    </option>
+
+                    <option value="Anio">
+                        Año
+                    </option>
+
+                    <option value="IndicadorEtiqueta">
+                        Indicador
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="campo">
+
+                <label for="columnas">
+                    Columnas
+                </label>
+
+                <select id="columnas">
+
+                    <option value="Anio">
+                        Año
+                    </option>
+
+                    <option value="Biblioteca">
+                        Biblioteca
+                    </option>
+
+                    <option value="IndicadorEtiqueta">
+                        Indicador
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <button
+                id="generar"
+                type="button">
+                Generar tabla
+            </button>
+
+
+            <button
+                id="descargar"
+                type="button">
+                Descargar CSV
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- ==================================================
+         RESULTADOS
+         ================================================== -->
+
+    <section>
+
+        <div id="resumen"></div>
+
+        <div id="tabla"></div>
+
+    </section>
+
+
+</main>
+
+<script src="js/app.js"></script>
+
+</body>
+
+</html>
+
+
+

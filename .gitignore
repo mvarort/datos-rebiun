@@ -1,0 +1,26 @@
+﻿# Windows
+Thumbs.db
+desktop.ini
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Editores
+.vscode/
+.idea/
+
+# Copias y temporales
+*_backup_*
+*_ESTABLE_*
+*.tmp
+*.bak
+
+# Datos de trabajo que no forman parte de la aplicación pública
+data/actualizacion_candidata/
+data/backups_actualizacion/
+data/auditoria_*.csv

@@ -1,0 +1,217 @@
+﻿body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    background: #f5f6f7;
+    color: #222;
+}
+
+main {
+    max-width: 1400px;
+    margin: 35px auto;
+    padding: 0 25px 50px;
+}
+
+h1 {
+    margin-bottom: 5px;
+}
+
+h2 {
+    width: 100%;
+    margin: 0 0 15px;
+    font-size: 19px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.intro {
+    color: #555;
+    margin-bottom: 25px;
+}
+
+
+/* PANELES */
+
+.panel {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.panel-bloque {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+
+/* SEGMENTADORES */
+
+.segmentadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
+}
+
+label {
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+select,
+.buscador {
+    padding: 9px;
+    border: 1px solid #bbb;
+    border-radius: 3px;
+    background: white;
+    box-sizing: border-box;
+}
+
+
+/* LISTAS */
+
+.bloque-lista {
+    width: 100%;
+}
+
+.cabecera-lista {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.buscador {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.lista-checks {
+    border: 1px solid #ccc;
+    background: #fafafa;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.lista-bibliotecas {
+    max-height: 250px;
+}
+
+.lista-indicadores {
+    max-height: 320px;
+}
+
+.lista-anios {
+    max-height: 150px;
+}
+
+.opcion-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    padding: 5px 3px;
+    font-weight: normal;
+    line-height: 1.3;
+}
+
+.opcion-check:hover {
+    background: #eee;
+}
+
+.opcion-check input {
+    margin-top: 2px;
+}
+
+.contador {
+    margin-top: 7px;
+    font-size: 12px;
+    color: #666;
+}
+
+
+/* BOTONES */
+
+button {
+    padding: 9px 16px;
+    cursor: pointer;
+    border: 1px solid #aaa;
+    background: #f3f3f3;
+    border-radius: 3px;
+}
+
+button:hover {
+    background: #e4e4e4;
+}
+
+button.mini {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+
+/* AÑOS */
+
+.bloque-anios {
+    max-width: 500px;
+}
+
+
+/* ORGANIZACIÓN */
+
+.organizacion {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+
+/* RESULTADOS */
+
+#resumen {
+    margin: 20px 0 8px;
+    font-weight: bold;
+}
+
+#tabla {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th,
+td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: right;
+    vertical-align: top;
+}
+
+th {
+    background: #eee;
+    white-space: nowrap;
+}
+
+th:first-child,
+td:first-child {
+    text-align: left;
+}
+
+.mensaje {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 20px;
+}
