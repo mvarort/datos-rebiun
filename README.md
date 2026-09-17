@@ -1,4 +1,11 @@
-﻿# Selector de estadísticas REBIUN
+﻿# Datos REBIUN
+
+**Consulta, generación y descarga de estadísticas REBIUN**
+
+### Aplicación
+
+https://mvarort.github.io/datos-rebiun/
+
 
 Aplicación web para consultar, seleccionar y reutilizar de forma sencilla las estadísticas de las bibliotecas universitarias y científicas españolas recogidas por REBIUN.
 
