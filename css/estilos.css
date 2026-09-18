@@ -540,3 +540,78 @@ a {
 
 
 
+
+
+/* BLOQUES_INDEPENDIENTES_BIBLIOTECAS_ANIOS */
+
+.seleccion-doble {
+    display: grid;
+    grid-template-columns:
+        minmax(0, 3fr)
+        minmax(220px, 1fr);
+
+    gap: 1.35rem;
+    align-items: stretch;
+    margin-bottom: 20px;
+}
+
+
+.seleccion-doble > .panel {
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+
+.seleccion-doble .panel-bloque {
+    row-gap: 0.75rem;
+}
+
+
+.panel-bibliotecas .cabecera-acciones,
+.panel-anios .cabecera-acciones {
+    justify-content: flex-end;
+    margin-bottom: 0.4rem;
+}
+
+
+.panel-anios .bloque-anios {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+}
+
+
+.panel-anios .lista-anios {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+}
+
+
+.panel-anios .lista-anios .opcion-check {
+    padding-top: 0.28rem;
+    padding-bottom: 0.28rem;
+}
+
+
+.panel-anios .contador {
+    margin-top: 0.35rem;
+}
+
+
+@media (max-width: 850px) {
+
+    .seleccion-doble {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+}
+
+
+/* Evita que el contenido del panel Años se estire verticalmente */
+.panel-anios {
+    align-content: flex-start;
+}
+

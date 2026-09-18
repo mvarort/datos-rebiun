@@ -20,173 +20,151 @@
 
 
         <!-- ==================================================
-         SELECCION_BIBLIOTECAS_ANIOS
+         BIBLIOTECAS_Y_ANIOS_INDEPENDIENTES
          ================================================== -->
 
-    <section class="panel panel-bloque panel-seleccion">
+    <div class="seleccion-doble">
 
-        <h2>1. Selección</h2>
+        <section class="panel panel-bloque panel-bibliotecas">
 
-        <div class="seleccion-grid">
+            <h2>1. Bibliotecas</h2>
 
-            <div class="seleccion-bibliotecas">
+            <div class="segmentadores">
 
-                <h3>Bibliotecas</h3>
+                <div class="campo">
 
-<div class="segmentadores">
+                    <label for="comunidad">
+                        Comunidad autónoma
+                    </label>
 
-            <div class="campo">
+                    <select id="comunidad">
+                        <option value="">Todas</option>
+                    </select>
 
-                <label for="comunidad">
-                    Comunidad autónoma
-                </label>
-
-                <select id="comunidad">
-
-                    <option value="">
-                        Todas
-                    </option>
-
-                </select>
-
-            </div>
+                </div>
 
 
-            <div class="campo">
+                <div class="campo">
 
-                <label for="modalidad">
-                    Modalidad
-                </label>
+                    <label for="modalidad">
+                        Modalidad
+                    </label>
 
-                <select id="modalidad">
+                    <select id="modalidad">
+                        <option value="">Todas</option>
+                    </select>
 
-    <option value="">
-        Todas
-    </option>
-
-</select>
-
-            </div>
+                </div>
 
 
-            <div class="campo">
+                <div class="campo">
 
-                <label for="titularidad">
-                    Titularidad
-                </label>
+                    <label for="titularidad">
+                        Titularidad
+                    </label>
 
-                <select id="titularidad">
-
-    <option value="">
-        Todas
-    </option>
-
-</select>
-
-            </div>
-
-        </div>
-
-
-        <div class="bloque-lista">
-
-            <div class="cabecera-lista">
-
-                <strong>Bibliotecas</strong>
-
-                <div>
-
-                    <button
-                        type="button"
-                        class="mini"
-                        id="marcar-bibliotecas">
-                        Marcar visibles
-                    </button>
-
-                    <button
-                        type="button"
-                        class="mini"
-                        id="desmarcar-bibliotecas">
-                        Desmarcar visibles
-                    </button>
+                    <select id="titularidad">
+                        <option value="">Todas</option>
+                    </select>
 
                 </div>
 
             </div>
 
 
-            <input
-                type="search"
-                id="buscar-biblioteca"
-                class="buscador"
-                placeholder="Buscar biblioteca...">
+            <div class="bloque-lista">
+
+                <div class="cabecera-lista cabecera-acciones">
+
+                    <div>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="marcar-bibliotecas">
+                            Marcar visibles
+                        </button>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="desmarcar-bibliotecas">
+                            Desmarcar visibles
+                        </button>
+
+                    </div>
+
+                </div>
 
 
-            <div
-                id="lista-bibliotecas"
-                class="lista-checks lista-bibliotecas">
-            </div>
+                <input
+                    type="search"
+                    id="buscar-biblioteca"
+                    class="buscador"
+                    placeholder="Buscar biblioteca...">
 
 
-            <div
-                id="contador-bibliotecas"
-                class="contador">
-            </div>
-
-        </div>
-
-            </div>
+                <div
+                    id="lista-bibliotecas"
+                    class="lista-checks lista-bibliotecas">
+                </div>
 
 
-            <aside class="seleccion-anios">
-
-                <h3>Años</h3>
-
-<div class="bloque-lista bloque-anios">
-
-            <div class="cabecera-lista">
-
-                <strong>Años disponibles</strong>
-
-                <div>
-
-                    <button
-                        type="button"
-                        class="mini"
-                        id="todos-anios">
-                        Todos
-                    </button>
-
-                    <button
-                        type="button"
-                        class="mini"
-                        id="ningun-anio">
-                        Ninguno
-                    </button>
-
+                <div
+                    id="contador-bibliotecas"
+                    class="contador">
                 </div>
 
             </div>
 
+        </section>
 
-            <div
-                id="lista-anios"
-                class="lista-checks lista-anios">
+
+        <section class="panel panel-bloque panel-anios">
+
+            <h2>2. Años</h2>
+
+            <div class="bloque-lista bloque-anios">
+
+                <div class="cabecera-lista cabecera-acciones">
+
+                    <div>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="todos-anios">
+                            Todos
+                        </button>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="ningun-anio">
+                            Ninguno
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="lista-anios"
+                    class="lista-checks lista-anios">
+                </div>
+
+
+                <div
+                    id="contador-anios"
+                    class="contador">
+                </div>
+
             </div>
 
+        </section>
 
-            <div
-                id="contador-anios"
-                class="contador">
-            </div>
-
-        </div>
-
-            </aside>
-
-        </div>
-
-    </section>
+    </div>
 
 
 
@@ -196,7 +174,7 @@
 
     <section class="panel panel-bloque">
 
-        <h2>2. Indicadores</h2>
+        <h2>3. Indicadores</h2>
 
 
         <div class="segmentadores">
@@ -298,7 +276,7 @@
 
     <section class="panel panel-bloque">
 
-        <h2>3. Organización del resultado</h2>
+        <h2>4. Organización del resultado</h2>
 
         <div class="organizacion">
 
