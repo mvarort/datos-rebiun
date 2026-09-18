@@ -2,6 +2,7 @@ let datos = [];
 let metadatosBibliotecas = [];
 let mapaBibliotecas = new Map();
 let datosActuales = [];
+let estadoSeleccionIndicadores = new Map();
 
 
 const ejeSelect =
@@ -24,6 +25,25 @@ const buscarBiblioteca =
 
 const buscarIndicador =
     document.getElementById("buscar-indicador");
+
+const botonGenerar =
+    document.getElementById("generar");
+
+const botonDescargar =
+    document.getElementById("descargar");
+
+const resumenElemento =
+    document.getElementById("resumen");
+
+const tablaElemento =
+    document.getElementById("tabla");
+
+
+tablaElemento.innerHTML =
+    '<div class="mensaje">Cargando datos…</div>';
+
+botonGenerar.disabled = true;
+botonDescargar.disabled = true;
 
 
 Promise.all([
@@ -78,14 +98,20 @@ Promise.all([
 
     cargarFiltros();
 
-    document.getElementById("tabla").innerHTML =
+    tablaElemento.innerHTML =
         '<div class="mensaje">Seleccione los datos y pulse «Generar tabla».</div>';
+
+    botonGenerar.disabled = false;
+    botonDescargar.disabled = true;
 })
 
 .catch(error => {
 
-    document.getElementById("tabla").innerHTML =
+    tablaElemento.innerHTML =
         `<div class="mensaje">${error.message}</div>`;
+
+    botonGenerar.disabled = true;
+    botonDescargar.disabled = true;
 });
 
 
@@ -161,6 +187,245 @@ function normalizarBusqueda(texto) {
 
 
 
+// CACHE_METADATOS_DATOS
+//
+// Años, ejes y apartados se calculan una sola vez
+// después de cargar los datos.
+
+let metadatosDatos = null;
+
+
+function construirMetadatosDatos() {
+
+    if (metadatosDatos) {
+        return;
+    }
+
+
+    const anios =
+        new Set();
+
+    const ejesPorCodigo =
+        new Map();
+
+    const apartadosPorCodigo =
+        new Map();
+
+
+    // CACHE_INDICADORES_POR_ANIO
+    //
+    // Para cada año conservamos una sola ficha por
+    // Codigo_Tecnico, en lugar de repetirla una vez
+    // por cada biblioteca.
+
+    const indicadoresPorAnio =
+        new Map();
+
+
+    datos.forEach(d => {
+
+        if (d.Anio) {
+            anios.add(
+                d.Anio
+            );
+        }
+
+
+        const anio =
+            Number(d.Anio) ||
+            -Infinity;
+
+
+        if (
+            d.Anio &&
+            d.Codigo_Tecnico
+        ) {
+
+            let indicadoresAnio =
+                indicadoresPorAnio.get(
+                    d.Anio
+                );
+
+
+            if (!indicadoresAnio) {
+
+                indicadoresAnio =
+                    new Map();
+
+                indicadoresPorAnio.set(
+                    d.Anio,
+                    indicadoresAnio
+                );
+            }
+
+
+            if (
+                !indicadoresAnio.has(
+                    d.Codigo_Tecnico
+                )
+            ) {
+
+                indicadoresAnio.set(
+                    d.Codigo_Tecnico,
+                    {
+                        Anio:
+                            d.Anio,
+
+                        Eje:
+                            d.Eje,
+
+                        Apartado:
+                            d.Apartado,
+
+                        Codigo_REBIUN:
+                            d.Codigo_REBIUN,
+
+                        Codigo_Tecnico:
+                            d.Codigo_Tecnico,
+
+                        Indicador:
+                            d.Indicador
+                    }
+                );
+            }
+        }
+
+
+        if (d.Eje) {
+
+            const existente =
+                ejesPorCodigo.get(
+                    d.Eje
+                );
+
+
+            if (
+                !existente ||
+                anio >= existente.anio
+            ) {
+
+                ejesPorCodigo.set(
+                    d.Eje,
+                    {
+                        codigo: d.Eje,
+                        nombre: d.Nombre_Eje,
+                        anio
+                    }
+                );
+            }
+        }
+
+
+        if (d.Apartado) {
+
+            const existente =
+                apartadosPorCodigo.get(
+                    d.Apartado
+                );
+
+
+            if (
+                !existente ||
+                anio >= existente.anio
+            ) {
+
+                apartadosPorCodigo.set(
+                    d.Apartado,
+                    {
+                        codigo:
+                            d.Apartado,
+
+                        nombre:
+                            d.Nombre_Apartado,
+
+                        eje:
+                            d.Eje,
+
+                        anio
+                    }
+                );
+            }
+        }
+    });
+
+
+    const ordenarCodigo =
+        (a, b) =>
+            a.codigo.localeCompare(
+                b.codigo,
+                "es",
+                { numeric: true }
+            );
+
+
+    const ejes =
+        [
+            ...ejesPorCodigo.values()
+        ].sort(
+            ordenarCodigo
+        );
+
+
+    const apartados =
+        [
+            ...apartadosPorCodigo.values()
+        ].sort(
+            ordenarCodigo
+        );
+
+
+    const apartadosPorEje =
+        new Map();
+
+
+    apartados.forEach(apartado => {
+
+        if (
+            !apartadosPorEje.has(
+                apartado.eje
+            )
+        ) {
+
+            apartadosPorEje.set(
+                apartado.eje,
+                []
+            );
+        }
+
+
+        apartadosPorEje
+            .get(apartado.eje)
+            .push(apartado);
+    });
+
+
+    metadatosDatos = {
+
+        // ANIOS_DESCENDENTES
+        // Primero se muestran los datos más recientes.
+        anios:
+            [...anios].sort(
+                (a, b) =>
+                    b.localeCompare(
+                        a,
+                        "es",
+                        { numeric: true }
+                    )
+            ),
+
+        ejes,
+
+        ejesPorCodigo,
+
+        apartados,
+
+        apartadosPorEje,
+
+        indicadoresPorAnio
+    };
+}
+
+
 function valoresUnicos(
     campo,
     fuente = datos
@@ -194,6 +459,8 @@ function valoresUnicos(
 
 
 function cargarFiltros() {
+
+    construirMetadatosDatos();
 
     cargarBibliotecas();
 
@@ -768,7 +1035,9 @@ function aplicarFiltrosBibliotecas() {
 function cargarEjes() {
 
     const ejes =
-        valoresUnicos("Eje");
+        metadatosDatos.ejes.map(
+            eje => eje.codigo
+        );
 
 
     ejeSelect.innerHTML =
@@ -778,9 +1047,9 @@ function cargarEjes() {
     ejes.forEach(eje => {
 
         const registro =
-            datos.find(
-                d => d.Eje === eje
-            );
+            metadatosDatos
+                .ejesPorCodigo
+                .get(eje);
 
 
         const opcion =
@@ -792,7 +1061,7 @@ function cargarEjes() {
 
 
         opcion.textContent =
-            `${eje}. ${registro.Nombre_Eje}`;
+            `${eje}. ${registro.nombre}`;
 
 
         ejeSelect.appendChild(opcion);
@@ -808,38 +1077,27 @@ function cargarEjes() {
 
 function cargarApartados() {
 
-    let fuente =
-        datos;
-
-
-    if (ejeSelect.value) {
-
-        fuente =
-            fuente.filter(
-                d =>
-                    d.Eje ===
-                    ejeSelect.value
-            );
-    }
+    const apartados =
+        ejeSelect.value
+            ? (
+                metadatosDatos
+                    .apartadosPorEje
+                    .get(
+                        ejeSelect.value
+                    ) || []
+            )
+            : metadatosDatos.apartados;
 
 
     const mapa =
-        new Map();
-
-
-    fuente.forEach(d => {
-
-        if (
-            d.Apartado &&
-            !mapa.has(d.Apartado)
-        ) {
-
-            mapa.set(
-                d.Apartado,
-                d.Nombre_Apartado
-            );
-        }
-    });
+        new Map(
+            apartados.map(
+                apartado => [
+                    apartado.codigo,
+                    apartado.nombre
+                ]
+            )
+        );
 
 
     apartadoSelect.innerHTML =
@@ -889,8 +1147,57 @@ function cargarApartados() {
 
 function cargarIndicadores() {
 
-    let fuente =
-        datos;
+    document
+        .querySelectorAll(
+            '#lista-indicadores input[name="indicadorCheck"]'
+        )
+        .forEach(input => {
+
+            estadoSeleccionIndicadores.set(
+                input.value,
+                input.checked
+            );
+        });
+
+    // ETIQUETAS_INDICADORES_POR_ANIO
+    //
+    // Codigo_Tecnico es la identidad longitudinal estable.
+    // La etiqueta visible se toma del año más reciente
+    // entre los años actualmente seleccionados.
+    //
+    // La fuente ya no son los 65.000+ registros,
+    // sino el índice compacto de indicadores por año.
+
+    const aniosSeleccionados =
+        obtenerSeleccionados(
+            "anioCheck"
+        );
+
+
+    const aniosFuente =
+        aniosSeleccionados.length > 0
+            ? aniosSeleccionados
+            : metadatosDatos.anios;
+
+
+    let fuente = [];
+
+
+    aniosFuente.forEach(anio => {
+
+        const indicadoresAnio =
+            metadatosDatos
+                .indicadoresPorAnio
+                .get(anio);
+
+
+        if (indicadoresAnio) {
+
+            fuente.push(
+                ...indicadoresAnio.values()
+            );
+        }
+    });
 
 
     if (ejeSelect.value) {
@@ -921,10 +1228,29 @@ function cargarIndicadores() {
 
     fuente.forEach(d => {
 
-        if (
-            !mapa.has(
+        const existente =
+            mapa.get(
                 d.Codigo_Tecnico
-            )
+            );
+
+
+        const anioActual =
+            Number(
+                d.Anio
+            );
+
+
+        const anioExistente =
+            existente
+                ? Number(
+                    existente.anio
+                )
+                : -Infinity;
+
+
+        if (
+            !existente ||
+            anioActual > anioExistente
         ) {
 
             mapa.set(
@@ -935,6 +1261,9 @@ function cargarIndicadores() {
 
                     tecnico:
                         d.Codigo_Tecnico,
+
+                    anio:
+                        d.Anio,
 
                     texto:
                         `${d.Codigo_REBIUN} ${d.Indicador}`
@@ -1001,7 +1330,13 @@ function cargarIndicadores() {
 
 
             input.checked =
-                true;
+                estadoSeleccionIndicadores.has(
+                    indicador.tecnico
+                )
+                    ? estadoSeleccionIndicadores.get(
+                        indicador.tecnico
+                    )
+                    : true;
 
 
             const span =
@@ -1070,7 +1405,7 @@ function cargarAnios() {
     contenedor.innerHTML = "";
 
 
-    valoresUnicos("Anio")
+    metadatosDatos.anios
         .forEach(anio => {
 
             const label =
@@ -1145,6 +1480,15 @@ function obtenerSeleccionados(
 
 
 
+function invalidarDatosActuales() {
+
+    datosActuales = [];
+
+    botonDescargar.disabled = true;
+}
+
+
+
 function marcarGrupo(
     nombreGrupo,
     estado
@@ -1159,6 +1503,9 @@ function marcarGrupo(
             input.checked =
                 estado;
         });
+
+
+    invalidarDatosActuales();
 
 
     actualizarContadores();
@@ -1192,6 +1539,9 @@ function marcarVisibles(
                     estado;
             }
         });
+
+
+    invalidarDatosActuales();
 
 
     actualizarContadores();
@@ -1282,28 +1632,40 @@ function actualizarContadores() {
 
 comunidadSelect.addEventListener(
     "change",
-    () =>
+    () => {
+
+        invalidarDatosActuales();
+
         actualizarSegmentadoresInstitucionales(
             "comunidad"
-        )
+        );
+    }
 );
 
 
 modalidadSelect.addEventListener(
     "change",
-    () =>
+    () => {
+
+        invalidarDatosActuales();
+
         actualizarSegmentadoresInstitucionales(
             "modalidad"
-        )
+        );
+    }
 );
 
 
 titularidadSelect.addEventListener(
     "change",
-    () =>
+    () => {
+
+        invalidarDatosActuales();
+
         actualizarSegmentadoresInstitucionales(
             "titularidad"
-        )
+        );
+    }
 );
 
 
@@ -1323,6 +1685,8 @@ ejeSelect.addEventListener(
     "change",
     () => {
 
+        invalidarDatosActuales();
+
         cargarApartados();
 
         buscarIndicador.value = "";
@@ -1335,6 +1699,8 @@ ejeSelect.addEventListener(
 apartadoSelect.addEventListener(
     "change",
     () => {
+
+        invalidarDatosActuales();
 
         buscarIndicador.value = "";
 
@@ -1427,7 +1793,27 @@ document
         .getElementById(id)
         .addEventListener(
             "change",
-            actualizarContadores
+            () => {
+
+                invalidarDatosActuales();
+
+                actualizarContadores();
+            }
+        );
+});
+
+
+[
+    "filas",
+    "columnas"
+]
+.forEach(id => {
+
+    document
+        .getElementById(id)
+        .addEventListener(
+            "change",
+            invalidarDatosActuales
         );
 });
 
@@ -1467,6 +1853,56 @@ function nombreDimension(campo) {
 
 
 
+
+/* =========================================================
+   ACTUALIZACIÓN DE ETIQUETAS SEGÚN AÑOS
+   ========================================================= */
+
+document
+    .getElementById("lista-anios")
+    .addEventListener(
+        "change",
+        () => {
+
+            cargarIndicadores();
+
+            actualizarContadores();
+
+            invalidarDatosActuales();
+        }
+    );
+
+
+document
+    .getElementById("todos-anios")
+    .addEventListener(
+        "click",
+        () => {
+
+            cargarIndicadores();
+
+            actualizarContadores();
+
+            invalidarDatosActuales();
+        }
+    );
+
+
+document
+    .getElementById("ningun-anio")
+    .addEventListener(
+        "click",
+        () => {
+
+            cargarIndicadores();
+
+            actualizarContadores();
+
+            invalidarDatosActuales();
+        }
+    );
+
+
 function generarTabla() {
 
     const anios =
@@ -1475,7 +1911,7 @@ function generarTabla() {
         );
 
 
-    let bibliotecas =
+    const bibliotecasMarcadas =
         obtenerSeleccionados(
             "bibliotecaCheck"
         );
@@ -1487,48 +1923,134 @@ function generarTabla() {
         );
 
 
-    bibliotecas =
-        bibliotecas.filter(
+    const bibliotecasCompatibles =
+        bibliotecasMarcadas.filter(
             bibliotecaCumpleSegmentadores
         );
 
 
-    if (
-        anios.length === 0 ||
-        bibliotecas.length === 0 ||
-        indicadores.length === 0
-    ) {
+    invalidarDatosActuales();
 
-        datosActuales = [];
+    resumenElemento.textContent = "";
 
 
-        document.getElementById(
-            "resumen"
-        ).textContent = "";
+    const diagnosticar = registrosEncontrados => {
+
+        console.debug(
+            "Diagnóstico de generación REBIUN",
+            {
+                aniosSeleccionados: anios,
+                bibliotecasMarcadas,
+                bibliotecasCompatibles,
+                indicadoresSeleccionados: indicadores,
+                eje: ejeSelect.value,
+                apartado: apartadoSelect.value,
+                registrosEncontrados
+            }
+        );
+    };
 
 
-        document.getElementById(
-            "tabla"
-        ).innerHTML =
-            '<div class="mensaje">' +
-            'La selección actual no contiene datos.' +
-            '</div>';
+    const mostrarMensaje = mensaje => {
 
+        tablaElemento.innerHTML =
+            `<div class="mensaje">${mensaje}</div>`;
+    };
+
+
+    if (anios.length === 0) {
+
+        diagnosticar(0);
+
+        mostrarMensaje("No hay años seleccionados.");
 
         return;
     }
 
 
+    if (bibliotecasMarcadas.length === 0) {
+
+        diagnosticar(0);
+
+        mostrarMensaje("No hay bibliotecas seleccionadas.");
+
+        return;
+    }
+
+
+    if (bibliotecasCompatibles.length === 0) {
+
+        diagnosticar(0);
+
+        mostrarMensaje(
+            "Hay bibliotecas marcadas, pero ninguna es compatible con los segmentadores institucionales actuales."
+        );
+
+        return;
+    }
+
+
+    if (indicadores.length === 0) {
+
+        diagnosticar(0);
+
+        mostrarMensaje("No hay indicadores seleccionados.");
+
+        return;
+    }
+
+
+    const campoFila =
+        document.getElementById(
+            "filas"
+        ).value;
+
+
+    const campoColumna =
+        document.getElementById(
+            "columnas"
+        ).value;
+
+
+    if (
+        campoFila ===
+        campoColumna
+    ) {
+
+        diagnosticar(0);
+
+        mostrarMensaje(
+            "Filas y columnas deben ser diferentes."
+        );
+
+        return;
+    }
+
+
+    const aniosSet =
+        new Set(anios);
+
+    const bibliotecasCompatiblesSet =
+        new Set(
+            bibliotecasCompatibles
+        );
+
+    const indicadoresSet =
+        new Set(indicadores);
+
+
     let filtrados =
         datos.filter(d =>
 
-            anios.includes(
+            aniosSet.has(
                 d.Anio
             ) &&
 
-            bibliotecas.includes(d.Codigo_Biblioteca_REBIUN) &&
+            bibliotecasCompatiblesSet.has(
+                d.Codigo_Biblioteca_REBIUN
+            ) &&
 
-            indicadores.includes(
+            indicadoresSet.has(
                 d.Codigo_Tecnico
             )
         );
@@ -1556,34 +2078,14 @@ function generarTabla() {
     }
 
 
-    datosActuales =
-        filtrados;
+    diagnosticar(filtrados.length);
 
 
-    const campoFila =
-        document.getElementById(
-            "filas"
-        ).value;
+    if (filtrados.length === 0) {
 
-
-    const campoColumna =
-        document.getElementById(
-            "columnas"
-        ).value;
-
-
-    if (
-        campoFila ===
-        campoColumna
-    ) {
-
-        document.getElementById(
-            "tabla"
-        ).innerHTML =
-            '<div class="mensaje">' +
-            'Filas y columnas deben ser diferentes.' +
-            '</div>';
-
+        mostrarMensaje(
+            "La selección es válida, pero no existen registros en rebiun_real.csv que coincidan con ella."
+        );
 
         return;
     }
@@ -1618,6 +2120,64 @@ function generarTabla() {
         );
 
 
+    // MAPA_CELDAS_OPTIMIZADO
+    //
+    // Se agrupan los registros una sola vez por
+    // fila y columna. Así evitamos recorrer
+    // filtrados completo para cada celda.
+
+    const mapaCeldas =
+        new Map();
+
+
+    filtrados.forEach(d => {
+
+        const claveFila =
+            d[campoFila];
+
+        const claveColumna =
+            d[campoColumna];
+
+
+        let mapaFila =
+            mapaCeldas.get(
+                claveFila
+            );
+
+
+        if (!mapaFila) {
+
+            mapaFila =
+                new Map();
+
+            mapaCeldas.set(
+                claveFila,
+                mapaFila
+            );
+        }
+
+
+        let registrosCelda =
+            mapaFila.get(
+                claveColumna
+            );
+
+
+        if (!registrosCelda) {
+
+            registrosCelda = [];
+
+            mapaFila.set(
+                claveColumna,
+                registrosCelda
+            );
+        }
+
+
+        registrosCelda.push(d);
+    });
+
+
     let html =
         "<table>";
 
@@ -1648,12 +2208,20 @@ function generarTabla() {
         columnas.forEach(
             columna => {
 
-                const registros =
-                    filtrados.filter(
-                        d =>
-                            d[campoFila] === fila &&
-                            d[campoColumna] === columna
+                const mapaFila =
+                    mapaCeldas.get(
+                        fila
                     );
+
+
+                const registros =
+                    mapaFila
+                        ? (
+                            mapaFila.get(
+                                columna
+                            ) || []
+                        )
+                        : [];
 
 
                 let contenido = "";
@@ -1685,18 +2253,27 @@ function generarTabla() {
                     );
 
 
+                    // DATO_CELDA_ESTRUCTURADO
+                    //
+                    // Cada registro se presenta como una pequeña fila
+                    // dentro de la celda: etiqueta a la izquierda y
+                    // valor alineado a la derecha.
+
                     contenido =
                         registros
 
                             .map(r =>
-                                `<strong>${escaparHTML(
-                                    r[terceraDimension]
-                                )}</strong>: ${formatearValor(
-                                    r.Valor
-                                )}`
+                                `<div class="dato-celda">` +
+                                    `<span class="dato-etiqueta">${escaparHTML(
+                                        r[terceraDimension]
+                                    )}</span>` +
+                                    `<span class="dato-valor">${formatearValor(
+                                        r.Valor
+                                    )}</span>` +
+                                `</div>`
                             )
 
-                            .join("<br>");
+                            .join("");
                 }
 
 
@@ -1714,22 +2291,24 @@ function generarTabla() {
         "</tbody></table>";
 
 
-    document.getElementById(
-        "tabla"
-    ).innerHTML = html;
+    tablaElemento.innerHTML = html;
 
 
-    document.getElementById(
-        "resumen"
-    ).textContent =
+    resumenElemento.textContent =
 
         `${filtrados.length} registros · ` +
 
         `${anios.length} año(s) · ` +
 
-        `${bibliotecas.length} biblioteca(s) · ` +
+        `${bibliotecasCompatibles.length} biblioteca(s) · ` +
 
         `${indicadores.length} indicador(es)`;
+
+
+    datosActuales =
+        filtrados;
+
+    botonDescargar.disabled = false;
 }
 
 

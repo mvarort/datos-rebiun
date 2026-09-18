@@ -158,14 +158,14 @@ button.mini {
 }
 
 
-/* AÑOS */
+/* AÃ‘OS */
 
 .bloque-anios {
     max-width: 500px;
 }
 
 
-/* ORGANIZACIÓN */
+/* ORGANIZACIÃ“N */
 
 .organizacion {
     display: flex;
@@ -215,3 +215,328 @@ td:first-child {
     border: 1px solid #ddd;
     padding: 20px;
 }
+
+/* =========================================================
+   PRESENTACION_DATOS_CELDA
+   Datos mÃºltiples dentro de una celda
+   ========================================================= */
+
+#tabla td {
+    vertical-align: top;
+}
+
+#tabla .dato-celda {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 0.8rem;
+    align-items: start;
+
+    padding: 0.38rem 0;
+
+    border-bottom: 1px solid #e2e5e9;
+}
+
+#tabla .dato-celda:first-child {
+    padding-top: 0;
+}
+
+#tabla .dato-celda:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+#tabla .dato-etiqueta {
+    min-width: 0;
+    line-height: 1.35;
+}
+
+#tabla .dato-valor {
+    white-space: nowrap;
+    text-align: right;
+
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+}
+
+/* =========================================================
+   AJUSTE_VISUAL_REBIUN
+   Ajuste tipogrÃ¡fico, espaciado y color corporativo
+   ========================================================= */
+
+:root {
+    --rebiun-turquesa: #338c87;
+    --rebiun-turquesa-oscuro: #2d7e79;
+    --rebiun-turquesa-claro: #eef6f5;
+    --rebiun-borde-suave: #d9e3e2;
+    --rebiun-texto: #333333;
+}
+
+
+/* TipografÃ­a general mÃ¡s compacta */
+
+body {
+    font-family:
+        "Segoe UI",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+
+    font-size: 15px;
+    line-height: 1.35;
+    color: var(--rebiun-texto);
+}
+
+
+/* TÃ­tulo principal: mÃ¡s prÃ³ximo al estilo limpio de REBIUN */
+
+h1 {
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: 0.01em;
+}
+
+
+/* Encabezados principales de cada bloque */
+
+h2 {
+    color: var(--rebiun-turquesa-oscuro);
+
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.2;
+
+    margin-top: 0;
+    margin-bottom: 0.55rem;
+
+    padding-bottom: 0.38rem;
+
+    border-bottom-color:
+        var(--rebiun-borde-suave);
+}
+
+
+/* Encabezados secundarios */
+
+h3 {
+    font-size: 1rem;
+    line-height: 1.2;
+
+    margin-top: 0.65rem;
+    margin-bottom: 0.4rem;
+}
+
+
+/* Controles */
+
+button,
+input,
+select {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+
+button {
+    padding: 0.27rem 0.55rem;
+}
+
+
+input[type="text"],
+input[type="search"],
+select {
+    padding-top: 0.34rem;
+    padding-bottom: 0.34rem;
+}
+
+
+button:hover {
+    border-color: var(--rebiun-turquesa);
+    background-color: var(--rebiun-turquesa-claro);
+}
+
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--rebiun-turquesa);
+    outline-offset: 1px;
+}
+
+
+/* Listados de selecciÃ³n */
+
+.opcion-check {
+    line-height: 1.25;
+}
+
+
+/* Tablas: un poco mÃ¡s compactas */
+
+#tabla th,
+#tabla td {
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+}
+
+
+#tabla thead th {
+    background-color: #f3f7f7;
+    border-bottom-color: var(--rebiun-turquesa);
+}
+
+
+/* Filas internas de las celdas densas */
+
+#tabla .dato-celda {
+    gap: 0.7rem;
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+}
+
+
+#tabla .dato-celda {
+    border-bottom-color: #dde6e5;
+}
+
+
+/* PequeÃ±o acento visual en elementos interactivos */
+
+a {
+    color: var(--rebiun-turquesa-oscuro);
+}
+
+/* =========================================================
+   LAYOUT_SELECCION_BIBLIOTECAS_ANIOS
+   Bibliotecas + periodo en una Ãºnica secciÃ³n
+   ========================================================= */
+
+.seleccion-grid {
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 3fr)
+        minmax(190px, 1fr);
+
+    gap: 1.35rem;
+    align-items: start;
+}
+
+
+.seleccion-bibliotecas,
+.seleccion-anios {
+    min-width: 0;
+}
+
+
+.seleccion-grid h3 {
+    margin-top: 0;
+    margin-bottom: 0.55rem;
+
+    color: var(
+        --rebiun-turquesa-oscuro,
+        #2d7e79
+    );
+
+    font-weight: 600;
+}
+
+
+/* SeparaciÃ³n visual discreta entre ambos grupos */
+
+.seleccion-anios {
+    padding-left: 1.2rem;
+
+    border-left:
+        1px solid
+        var(
+            --rebiun-borde-suave,
+            #d9e3e2
+        );
+}
+
+
+/* AÃ±os ya no necesitan una caja alta con scroll */
+
+.seleccion-anios .bloque-anios {
+    width: auto;
+    max-width: none;
+    margin: 0;
+}
+
+
+.seleccion-anios .lista-anios {
+    height: auto;
+    min-height: 0;
+    max-height: none;
+
+    overflow: visible;
+}
+
+
+/* Lista cronolÃ³gica compacta */
+
+.seleccion-anios .lista-anios .opcion-check {
+    padding-top: 0.28rem;
+    padding-bottom: 0.28rem;
+}
+
+
+/* Cabecera de aÃ±os algo mÃ¡s compacta */
+
+.seleccion-anios .cabecera-lista {
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+
+.seleccion-anios .contador {
+    margin-top: 0.40rem;
+}
+
+
+/* Pantallas estrechas */
+
+@media (max-width: 850px) {
+
+    .seleccion-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+
+    .seleccion-anios {
+        padding-left: 0;
+        padding-top: 0.9rem;
+
+        border-left: none;
+
+        border-top:
+            1px solid
+            var(
+                --rebiun-borde-suave,
+                #d9e3e2
+            );
+    }
+
+
+    .seleccion-anios .lista-anios {
+        display: grid;
+        grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(90px, 1fr)
+            );
+
+        gap: 0.15rem 0.6rem;
+    }
+}
+
+
+/* Ajuste fino de separación en Bibliotecas */
+.seleccion-bibliotecas .bloque-lista {
+    margin-top: 0.40rem;
+}
+
+
+

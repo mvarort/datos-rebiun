@@ -1,26 +1,43 @@
-﻿# Windows
+# =========================================================
+# Selector REBIUN - archivos no publicados
+# =========================================================
+
+# Copias de seguridad y estados intermedios
+backup_*/
+*_backup_*
+*_ESTABLE_*
+*_estable_*
+*_estado_problematico_*
+
+# ---------------------------------------------------------
+# Datos
+# ---------------------------------------------------------
+# Por defecto no versionamos los ficheros de trabajo de data.
+data/*
+
+# Únicos ficheros de datos necesarios para la aplicación.
+!data/rebiun_real.csv
+!data/bibliotecas_rebiun.csv
+
+# ---------------------------------------------------------
+# Fuentes y ficheros de trabajo
+# ---------------------------------------------------------
+*.xlsx
+*.xls
+
+# Scripts auxiliares locales
+*.py
+
+# ---------------------------------------------------------
+# Sistema / editores
+# ---------------------------------------------------------
+.DS_Store
 Thumbs.db
 desktop.ini
-
-# macOS
-.DS_Store
-
-# Python
-__pycache__/
-*.pyc
-.venv/
-
-# Editores
 .vscode/
 .idea/
 
-# Copias y temporales
-*_backup_*
-*_ESTABLE_*
+# Temporales
 *.tmp
-*.bak
-
-# Datos de trabajo que no forman parte de la aplicación pública
-data/actualizacion_candidata/
-data/backups_actualizacion/
-data/auditoria_*.csv
+*.temp
+~$*
