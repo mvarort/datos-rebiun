@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selector de indicadores REBIUN</title>
+    <title>REBIUN Data Explorer | Estadísticas REBIUN</title>
     <link rel="stylesheet" href="css/estilos.css">
 </head>
 
@@ -12,7 +12,12 @@
 
 <main>
 
-    <h1>Selector de indicadores REBIUN</h1>
+    <header class="cabecera-aplicacion">
+        <h1>REBIUN Data Explorer</h1>
+        <p class="subtitulo-aplicacion">
+            Consulta y visualización de estadísticas REBIUN
+        </p>
+    </header>
 
     <p class="intro">
         Seleccione las bibliotecas, indicadores y años que desea consultar.
@@ -69,6 +74,50 @@
 
                 </div>
 
+            </div>
+
+
+            <div class="fila-segmentador-tamano">
+<fieldset class="segmentador-tamano">
+
+                <legend>
+                    Tamaño por personas usuarias propias
+                </legend>
+
+                <div
+                    class="opciones-tamano"
+                    id="segmentador-tamano"
+                    role="radiogroup"
+                    aria-label="Tamaño por personas usuarias propias">
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="grupo1">
+                        <span>Grupo 1 · Hasta 20.000</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="grupo2">
+                        <span>Grupo 2 · 20.001–40.000</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="grupo3">
+                        <span>Grupo 3 · 40.001 o más</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="sin-dato">
+                        <span>Sin dato</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="todas" checked>
+                        <span>Todas</span>
+                    </label>
+
+                </div>
+
+            </fieldset>
             </div>
 
 
@@ -211,6 +260,48 @@
                 </select>
 
             </div>
+
+            <div
+                class="campo campo-estado-indicadores"
+                id="filtro-estado-indicadores">
+
+                <span class="etiqueta-control">
+                    Estado
+                </span>
+
+                <div
+                    class="botones-estado-indicadores"
+                    role="group"
+                    aria-label="Estado de los indicadores">
+
+                    <button
+                        type="button"
+                        class="boton-estado-indicadores activo"
+                        data-estado-indicadores="vigentes"
+                        aria-pressed="true">
+                        Vigentes
+                    </button>
+
+                    <button
+                        type="button"
+                        class="boton-estado-indicadores"
+                        data-estado-indicadores="historicos"
+                        aria-pressed="false">
+                        Históricos
+                    </button>
+
+                    <button
+                        type="button"
+                        class="boton-estado-indicadores"
+                        data-estado-indicadores="todos"
+                        aria-pressed="false">
+                        Todos
+                    </button>
+
+                </div>
+
+            </div>
+
 
         </div>
 
@@ -357,12 +448,163 @@
 
         <div id="resumen"></div>
 
-        <div id="tabla"></div>
+        <div
+            id="selector-vistas"
+            class="selector-vistas"
+            role="tablist"
+            aria-label="Visualización del resultado"
+            hidden>
+
+            <button
+                type="button"
+                class="pestana-vista activa"
+                role="tab"
+                id="pestana-tabla"
+                data-vista="tabla"
+                aria-controls="tabla"
+                aria-selected="true">
+                Tabla
+            </button>
+
+            <button
+                type="button"
+                class="pestana-vista"
+                role="tab"
+                id="pestana-evolucion"
+                data-vista="evolucion"
+                aria-controls="evolucion"
+                aria-selected="false">
+                Evolución
+            </button>
+
+            <button
+                type="button"
+                class="pestana-vista"
+                role="tab"
+                id="pestana-comparacion"
+                data-vista="comparacion"
+                aria-controls="comparacion"
+                aria-selected="false">
+                Comparación
+            </button>
+
+        </div>
+
+        <div
+            id="tabla"
+            role="tabpanel"
+            aria-labelledby="pestana-tabla">
+        </div>
+
+        <div
+            id="evolucion"
+            class="vista-grafico"
+            role="tabpanel"
+            aria-labelledby="pestana-evolucion"
+            hidden>
+
+            <div class="controles-grafico">
+                <div class="campo">
+                    <label for="indicador-evolucion">
+                        Indicador a visualizar
+                    </label>
+                    <select id="indicador-evolucion"></select>
+                </div>
+
+                <label class="control-promedio">
+                    <input type="checkbox" id="mostrar-promedio-evolucion">
+                    Mostrar promedio
+                </label>
+
+                <div class="descarga-grafico">
+                    <button
+                        type="button"
+                        class="boton-descarga-grafico"
+                        data-menu-descarga="evolucion"
+                        aria-haspopup="menu"
+                        aria-expanded="false">
+                        Descargar gráfico
+                    </button>
+                    <div
+                        class="menu-descarga-grafico"
+                        role="menu"
+                        data-menu="evolucion"
+                        hidden>
+                        <button type="button" role="menuitem" data-descarga="png" data-vista-descarga="evolucion">PNG</button>
+                        <button type="button" role="menuitem" data-descarga="pdf" data-vista-descarga="evolucion">PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                id="grafico-evolucion"
+                class="contenedor-grafico">
+            </div>
+
+        </div>
+
+        <div
+            id="comparacion"
+            class="vista-grafico"
+            role="tabpanel"
+            aria-labelledby="pestana-comparacion"
+            hidden>
+
+            <div class="controles-grafico">
+                <div class="campo">
+                    <label for="indicador-comparacion">
+                        Indicador
+                    </label>
+                    <select id="indicador-comparacion"></select>
+                </div>
+
+                <fieldset class="selector-anios-comparacion">
+                    <legend>Año</legend>
+                    <div
+                        id="anios-comparacion"
+                        class="chips-anios"
+                        role="group"
+                        aria-label="Año de comparación">
+                    </div>
+                </fieldset>
+
+                <div class="descarga-grafico">
+                    <button
+                        type="button"
+                        class="boton-descarga-grafico"
+                        data-menu-descarga="comparacion"
+                        aria-haspopup="menu"
+                        aria-expanded="false">
+                        Descargar gráfico
+                    </button>
+                    <div
+                        class="menu-descarga-grafico"
+                        role="menu"
+                        data-menu="comparacion"
+                        hidden>
+                        <button type="button" role="menuitem" data-descarga="png" data-vista-descarga="comparacion">PNG</button>
+                        <button type="button" role="menuitem" data-descarga="pdf" data-vista-descarga="comparacion">PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                id="grafico-comparacion"
+                class="contenedor-grafico">
+            </div>
+
+        </div>
 
     </section>
 
 
 </main>
+
+<section
+    id="vista-impresion-grafico"
+    class="vista-impresion-grafico"
+    aria-hidden="true">
+</section>
 
 <script src="js/app.js"></script>
 

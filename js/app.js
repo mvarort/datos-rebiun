@@ -3,6 +3,9 @@ let metadatosBibliotecas = [];
 let mapaBibliotecas = new Map();
 let datosActuales = [];
 let estadoSeleccionIndicadores = new Map();
+let estadoFiltroIndicadores = "vigentes";
+let indiceUsuariosPropios = new Map();
+let gruposTamanoBibliotecas = new Map();
 
 
 const ejeSelect =
@@ -19,6 +22,9 @@ const modalidadSelect =
 
 const titularidadSelect =
     document.getElementById("titularidad");
+
+const segmentadorTamano =
+    document.getElementById("segmentador-tamano");
 
 const buscarBiblioteca =
     document.getElementById("buscar-biblioteca");
@@ -37,6 +43,38 @@ const resumenElemento =
 
 const tablaElemento =
     document.getElementById("tabla");
+
+const selectorVistas =
+    document.getElementById("selector-vistas");
+
+const evolucionElemento =
+    document.getElementById("evolucion");
+
+const comparacionElemento =
+    document.getElementById("comparacion");
+
+const indicadorEvolucionSelect =
+    document.getElementById("indicador-evolucion");
+
+const indicadorComparacionSelect =
+    document.getElementById("indicador-comparacion");
+
+const mostrarPromedioEvolucion =
+    document.getElementById("mostrar-promedio-evolucion");
+
+const aniosComparacionElemento =
+    document.getElementById("anios-comparacion");
+
+const graficoEvolucionElemento =
+    document.getElementById("grafico-evolucion");
+
+const graficoComparacionElemento =
+    document.getElementById("grafico-comparacion");
+
+const vistaImpresionGrafico =
+    document.getElementById("vista-impresion-grafico");
+
+let anioComparacionActivo = "";
 
 
 tablaElemento.innerHTML =
@@ -90,6 +128,12 @@ Promise.all([
 
 
     datos.forEach(fila => {
+
+        fila.Biblioteca =
+            etiquetaBiblioteca(
+                fila.Biblioteca,
+                fila.Codigo_Biblioteca_REBIUN
+            );
 
         fila.IndicadorEtiqueta =
             `${fila.Codigo_REBIUN} ${fila.Indicador}`;
@@ -171,6 +215,16 @@ function convertirCSV(texto) {
    ========================================================= */
 
 
+function etiquetaBiblioteca(nombre, codigo) {
+
+    if (!codigo) {
+        return nombre;
+    }
+
+    return `[${codigo}] ${nombre}`;
+}
+
+
 function normalizarBusqueda(texto) {
 
     return String(texto)
@@ -205,26 +259,27 @@ function construirMetadatosDatos() {
     const anios =
         new Set();
 
+
     const ejesPorCodigo =
         new Map();
+
 
     const apartadosPorCodigo =
         new Map();
 
 
-    // CACHE_INDICADORES_POR_ANIO
-    //
-    // Para cada año conservamos una sola ficha por
-    // Codigo_Tecnico, en lugar de repetirla una vez
-    // por cada biblioteca.
-
     const indicadoresPorAnio =
         new Map();
+
+
+    const todosLosCodigos =
+        new Set();
 
 
     datos.forEach(d => {
 
         if (d.Anio) {
+
             anios.add(
                 d.Anio
             );
@@ -241,6 +296,11 @@ function construirMetadatosDatos() {
             d.Codigo_Tecnico
         ) {
 
+            todosLosCodigos.add(
+                d.Codigo_Tecnico
+            );
+
+
             let indicadoresAnio =
                 indicadoresPorAnio.get(
                     d.Anio
@@ -251,6 +311,7 @@ function construirMetadatosDatos() {
 
                 indicadoresAnio =
                     new Map();
+
 
                 indicadoresPorAnio.set(
                     d.Anio,
@@ -274,8 +335,14 @@ function construirMetadatosDatos() {
                         Eje:
                             d.Eje,
 
+                        Nombre_Eje:
+                            d.Nombre_Eje,
+
                         Apartado:
                             d.Apartado,
+
+                        Nombre_Apartado:
+                            d.Nombre_Apartado,
 
                         Codigo_REBIUN:
                             d.Codigo_REBIUN,
@@ -307,8 +374,12 @@ function construirMetadatosDatos() {
                 ejesPorCodigo.set(
                     d.Eje,
                     {
-                        codigo: d.Eje,
-                        nombre: d.Nombre_Eje,
+                        codigo:
+                            d.Eje,
+
+                        nombre:
+                            d.Nombre_Eje,
+
                         anio
                     }
                 );
@@ -349,6 +420,47 @@ function construirMetadatosDatos() {
     });
 
 
+    const aniosOrdenados =
+        [...anios].sort(
+            (a, b) =>
+                b.localeCompare(
+                    a,
+                    "es",
+                    { numeric: true }
+                )
+        );
+
+
+    const ultimoAnio =
+        aniosOrdenados[0] || "";
+
+
+    const indicadoresUltimoAnio =
+        indicadoresPorAnio.get(
+            ultimoAnio
+        );
+
+
+    const codigosVigentes =
+        new Set(
+            indicadoresUltimoAnio
+                ? [...indicadoresUltimoAnio.keys()]
+                : []
+        );
+
+
+    const codigosHistoricos =
+        new Set(
+            [...todosLosCodigos]
+                .filter(
+                    codigo =>
+                        !codigosVigentes.has(
+                            codigo
+                        )
+                )
+        );
+
+
     const ordenarCodigo =
         (a, b) =>
             a.codigo.localeCompare(
@@ -378,40 +490,43 @@ function construirMetadatosDatos() {
         new Map();
 
 
-    apartados.forEach(apartado => {
+    apartados.forEach(
+        apartado => {
 
-        if (
-            !apartadosPorEje.has(
-                apartado.eje
-            )
-        ) {
+            if (
+                !apartadosPorEje.has(
+                    apartado.eje
+                )
+            ) {
 
-            apartadosPorEje.set(
-                apartado.eje,
-                []
-            );
+                apartadosPorEje.set(
+                    apartado.eje,
+                    []
+                );
+            }
+
+
+            apartadosPorEje
+                .get(
+                    apartado.eje
+                )
+                .push(
+                    apartado
+                );
         }
-
-
-        apartadosPorEje
-            .get(apartado.eje)
-            .push(apartado);
-    });
+    );
 
 
     metadatosDatos = {
 
-        // ANIOS_DESCENDENTES
-        // Primero se muestran los datos más recientes.
         anios:
-            [...anios].sort(
-                (a, b) =>
-                    b.localeCompare(
-                        a,
-                        "es",
-                        { numeric: true }
-                    )
-            ),
+            aniosOrdenados,
+
+        ultimoAnio,
+
+        codigosVigentes,
+
+        codigosHistoricos,
 
         ejes,
 
@@ -464,6 +579,12 @@ function cargarFiltros() {
 
     cargarBibliotecas();
 
+    cargarAnios();
+
+    construirIndiceUsuariosPropios();
+
+    recalcularGruposTamano();
+
     actualizarSegmentadoresInstitucionales();
 
     cargarEjes();
@@ -471,8 +592,6 @@ function cargarFiltros() {
     cargarApartados();
 
     cargarIndicadores();
-
-    cargarAnios();
 
     actualizarContadores();
 }
@@ -616,18 +735,62 @@ function cargarComunidades() {
    ========================================================= */
 
 
+function obtenerTamanoSeleccionado() {
+
+    const seleccionado =
+        segmentadorTamano.querySelector(
+            'input[name="tamanoUsuarios"]:checked'
+        );
+
+    return seleccionado
+        ? seleccionado.value
+        : "todas";
+}
+
+
+function bibliotecaCumpleFiltrosInstitucionales(
+    biblioteca,
+    filtros,
+    campoOmitido = null
+) {
+
+    const codigo =
+        biblioteca.Codigo_Biblioteca_REBIUN;
+
+    return (
+        (
+            campoOmitido === "comunidad" ||
+            !filtros.comunidad ||
+            biblioteca.Comunidad_Autonoma === filtros.comunidad
+        ) &&
+        (
+            campoOmitido === "modalidad" ||
+            !filtros.modalidad ||
+            biblioteca.Modalidad === filtros.modalidad
+        ) &&
+        (
+            campoOmitido === "titularidad" ||
+            !filtros.titularidad ||
+            biblioteca.Titularidad === filtros.titularidad
+        ) &&
+        (
+            campoOmitido === "tamano" ||
+            !filtros.tamano ||
+            filtros.tamano === "todas" ||
+            gruposTamanoBibliotecas.get(codigo) === filtros.tamano
+        )
+    );
+}
+
+
 function hayBibliotecasCompatibles(filtros) {
 
-    return metadatosBibliotecas.some(b =>
-
-        (!filtros.comunidad ||
-            b.Comunidad_Autonoma === filtros.comunidad) &&
-
-        (!filtros.modalidad ||
-            b.Modalidad === filtros.modalidad) &&
-
-        (!filtros.titularidad ||
-            b.Titularidad === filtros.titularidad)
+    return metadatosBibliotecas.some(
+        biblioteca =>
+            bibliotecaCumpleFiltrosInstitucionales(
+                biblioteca,
+                filtros
+            )
     );
 }
 
@@ -640,37 +803,18 @@ function obtenerOpcionesInstitucionales(
     const valores =
         metadatosBibliotecas
 
-            .filter(b => {
-
-                if (
-                    campoObjetivo !== "Comunidad_Autonoma" &&
-                    seleccion.comunidad &&
-                    b.Comunidad_Autonoma !== seleccion.comunidad
-                ) {
-                    return false;
-                }
-
-
-                if (
-                    campoObjetivo !== "Modalidad" &&
-                    seleccion.modalidad &&
-                    b.Modalidad !== seleccion.modalidad
-                ) {
-                    return false;
-                }
-
-
-                if (
-                    campoObjetivo !== "Titularidad" &&
-                    seleccion.titularidad &&
-                    b.Titularidad !== seleccion.titularidad
-                ) {
-                    return false;
-                }
-
-
-                return true;
-            })
+            .filter(
+                b =>
+                    bibliotecaCumpleFiltrosInstitucionales(
+                        b,
+                        seleccion,
+                        {
+                            Comunidad_Autonoma: "comunidad",
+                            Modalidad: "modalidad",
+                            Titularidad: "titularidad"
+                        }[campoObjetivo]
+                    )
+            )
 
             .map(b => b[campoObjetivo])
 
@@ -744,7 +888,10 @@ function actualizarSegmentadoresInstitucionales(
             modalidadSelect.value,
 
         titularidad:
-            titularidadSelect.value
+            titularidadSelect.value,
+
+        tamano:
+            obtenerTamanoSeleccionado()
     };
 
 
@@ -764,7 +911,8 @@ function actualizarSegmentadoresInstitucionales(
 
         comunidad: "",
         modalidad: "",
-        titularidad: ""
+        titularidad: "",
+        tamano: "todas"
     };
 
 
@@ -781,7 +929,8 @@ function actualizarSegmentadoresInstitucionales(
     const prioridad = [
         "comunidad",
         "modalidad",
-        "titularidad"
+        "titularidad",
+        "tamano"
     ];
 
 
@@ -860,6 +1009,29 @@ function actualizarSegmentadoresInstitucionales(
     );
 
 
+    segmentadorTamano
+        .querySelectorAll(
+            'input[name="tamanoUsuarios"]'
+        )
+        .forEach(input => {
+
+            const esTodas =
+                input.value === "todas";
+
+            const prueba = {
+                ...seleccion,
+                tamano: input.value
+            };
+
+            input.disabled =
+                !esTodas &&
+                !hayBibliotecasCompatibles(prueba);
+
+            input.checked =
+                input.value === seleccion.tamano;
+        });
+
+
     aplicarFiltrosBibliotecas();
 
     actualizarContadores();
@@ -877,11 +1049,13 @@ function cargarBibliotecas() {
         [...metadatosBibliotecas]
             .sort(
                 (a, b) =>
-                    a.Biblioteca.localeCompare(
-                        b.Biblioteca,
-                        "es"
+                    a.Codigo_Biblioteca_REBIUN.localeCompare(
+                        b.Codigo_Biblioteca_REBIUN,
+                        "es",
+                        { numeric: true }
                     )
             );
+
 
     bibliotecasOrdenadas.forEach(meta => {
 
@@ -893,7 +1067,7 @@ function cargarBibliotecas() {
 
         label.dataset.busqueda =
             normalizarBusqueda(
-                meta.Biblioteca
+                `${meta.Codigo_Biblioteca_REBIUN} ${meta.Biblioteca}`
             );
 
         label.dataset.comunidad =
@@ -926,7 +1100,10 @@ function cargarBibliotecas() {
 
         // El usuario sigue viendo el nombre de la institución.
         span.textContent =
-            meta.Biblioteca;
+            etiquetaBiblioteca(
+                meta.Biblioteca,
+                meta.Codigo_Biblioteca_REBIUN
+            );
 
         label.appendChild(input);
         label.appendChild(span);
@@ -950,6 +1127,9 @@ function bibliotecaCumpleSegmentadores(bibliotecaId) {
     const titularidad =
         titularidadSelect.value;
 
+    const tamano =
+        obtenerTamanoSeleccionado();
+
     if (
         comunidad &&
         meta.Comunidad_Autonoma !== comunidad
@@ -967,6 +1147,13 @@ function bibliotecaCumpleSegmentadores(bibliotecaId) {
     if (
         titularidad &&
         meta.Titularidad !== titularidad
+    ) {
+        return false;
+    }
+
+    if (
+        tamano !== "todas" &&
+        gruposTamanoBibliotecas.get(bibliotecaId) !== tamano
     ) {
         return false;
     }
@@ -991,6 +1178,9 @@ function aplicarFiltrosBibliotecas() {
     const titularidad =
         titularidadSelect.value;
 
+    const tamano =
+        obtenerTamanoSeleccionado();
+
     document
         .querySelectorAll(
             "#lista-bibliotecas .opcion-check"
@@ -1013,12 +1203,21 @@ function aplicarFiltrosBibliotecas() {
                 !titularidad ||
                 label.dataset.titularidad === titularidad;
 
+            const coincideTamano =
+                tamano === "todas" ||
+                gruposTamanoBibliotecas.get(
+                    label.querySelector(
+                        'input[name="bibliotecaCheck"]'
+                    ).value
+                ) === tamano;
+
             label.style.display =
                 (
                     coincideNombre &&
                     coincideComunidad &&
                     coincideModalidad &&
-                    coincideTitularidad
+                    coincideTitularidad &&
+                    coincideTamano
                 )
                     ? "flex"
                     : "none";
@@ -1032,40 +1231,348 @@ function aplicarFiltrosBibliotecas() {
    ========================================================= */
 
 
+function codigoCumpleEstadoIndicador(
+    codigo
+) {
+
+    if (
+        estadoFiltroIndicadores ===
+        "todos"
+    ) {
+
+        return true;
+    }
+
+
+    if (
+        estadoFiltroIndicadores ===
+        "historicos"
+    ) {
+
+        return metadatosDatos
+            .codigosHistoricos
+            .has(
+                codigo
+            );
+    }
+
+
+    return metadatosDatos
+        .codigosVigentes
+        .has(
+            codigo
+        );
+}
+
+
+
+function obtenerFuenteIndicadoresEstado() {
+
+    const aniosSeleccionados =
+        obtenerSeleccionados(
+            "anioCheck"
+        );
+
+
+    const aniosFuente =
+        aniosSeleccionados.length > 0
+            ? aniosSeleccionados
+            : metadatosDatos.anios;
+
+
+    const fuente =
+        [];
+
+
+    aniosFuente.forEach(
+        anio => {
+
+            const mapa =
+                metadatosDatos
+                    .indicadoresPorAnio
+                    .get(
+                        anio
+                    );
+
+
+            if (!mapa) {
+                return;
+            }
+
+
+            mapa.forEach(
+                indicador => {
+
+                    if (
+                        codigoCumpleEstadoIndicador(
+                            indicador.Codigo_Tecnico
+                        )
+                    ) {
+
+                        fuente.push(
+                            indicador
+                        );
+                    }
+                }
+            );
+        }
+    );
+
+
+    return fuente;
+}
+
+
+
+const cacheNombresTaxonomia =
+    new Map();
+
+
+function obtenerNombreTaxonomia(
+    campoCodigo,
+    campoNombre,
+    codigo
+) {
+
+    const aniosSeleccionados =
+        obtenerSeleccionados(
+            "anioCheck"
+        );
+
+
+    const claveCache =
+        `${campoCodigo}|${campoNombre}|${codigo}|` +
+        [...aniosSeleccionados]
+            .sort()
+            .join(",");
+
+
+    if (
+        cacheNombresTaxonomia.has(
+            claveCache
+        )
+    ) {
+
+        return cacheNombresTaxonomia.get(
+            claveCache
+        );
+    }
+
+
+    const conjuntoAnios =
+        aniosSeleccionados.length > 0
+            ? new Set(
+                aniosSeleccionados
+            )
+            : null;
+
+
+    let mejorSeleccionado =
+        null;
+
+
+    let mejorHistorico =
+        null;
+
+
+    datos.forEach(d => {
+
+        if (
+            d[campoCodigo] !==
+            codigo
+        ) {
+
+            return;
+        }
+
+
+        const nombre =
+            String(
+                d[campoNombre] || ""
+            ).trim();
+
+
+        if (!nombre) {
+
+            return;
+        }
+
+
+        const anio =
+            Number(
+                d.Anio
+            ) ||
+            -Infinity;
+
+
+        if (
+            !mejorHistorico ||
+            anio >
+            mejorHistorico.anio
+        ) {
+
+            mejorHistorico = {
+                nombre,
+                anio
+            };
+        }
+
+
+        if (
+            conjuntoAnios &&
+            conjuntoAnios.has(
+                d.Anio
+            ) &&
+            (
+                !mejorSeleccionado ||
+                anio >
+                mejorSeleccionado.anio
+            )
+        ) {
+
+            mejorSeleccionado = {
+                nombre,
+                anio
+            };
+        }
+    });
+
+
+    const resultado =
+        mejorSeleccionado
+            ? mejorSeleccionado.nombre
+            : (
+                mejorHistorico
+                    ? mejorHistorico.nombre
+                    : ""
+            );
+
+
+    cacheNombresTaxonomia.set(
+        claveCache,
+        resultado
+    );
+
+
+    return resultado;
+}
+
+
+
 function cargarEjes() {
 
-    const ejes =
-        metadatosDatos.ejes.map(
-            eje => eje.codigo
-        );
+    const valorAnterior =
+        ejeSelect.value;
+
+
+    const fuente =
+        obtenerFuenteIndicadoresEstado();
+
+
+    const mapa =
+        new Map();
+
+
+    fuente.forEach(
+        d => {
+
+            if (!d.Eje) {
+                return;
+            }
+
+
+            const existente =
+                mapa.get(
+                    d.Eje
+                );
+
+
+            const anioActual =
+                Number(d.Anio) ||
+                -Infinity;
+
+
+            const anioExistente =
+                existente
+                    ? existente.anio
+                    : -Infinity;
+
+
+            if (
+                !existente ||
+                anioActual >
+                anioExistente
+            ) {
+
+                mapa.set(
+                    d.Eje,
+                    {
+                        codigo:
+                            d.Eje,
+
+                        nombre:
+                            obtenerNombreTaxonomia(
+                                "Eje",
+                                "Nombre_Eje",
+                                d.Eje
+                            ),
+
+                        anio:
+                            anioActual
+                    }
+                );
+            }
+        }
+    );
 
 
     ejeSelect.innerHTML =
         '<option value="">Todos los ejes</option>';
 
 
-    ejes.forEach(eje => {
+    [...mapa.values()]
 
-        const registro =
-            metadatosDatos
-                .ejesPorCodigo
-                .get(eje);
+        .sort(
+            (a, b) =>
+                a.codigo.localeCompare(
+                    b.codigo,
+                    "es",
+                    { numeric: true }
+                )
+        )
+
+        .forEach(
+            eje => {
+
+                const opcion =
+                    document.createElement(
+                        "option"
+                    );
 
 
-        const opcion =
-            document.createElement("option");
+                opcion.value =
+                    eje.codigo;
 
 
-        opcion.value =
-            eje;
+                opcion.textContent =
+                    `${eje.codigo}. ${eje.nombre}`;
 
 
-        opcion.textContent =
-            `${eje}. ${registro.nombre}`;
+                ejeSelect.appendChild(
+                    opcion
+                );
+            }
+        );
 
 
-        ejeSelect.appendChild(opcion);
-    });
+    ejeSelect.value =
+        valorAnterior &&
+        mapa.has(
+            valorAnterior
+        )
+
+            ? valorAnterior
+            : "";
 }
 
 
@@ -1077,46 +1584,99 @@ function cargarEjes() {
 
 function cargarApartados() {
 
-    const apartados =
-        ejeSelect.value
-            ? (
-                metadatosDatos
-                    .apartadosPorEje
-                    .get(
-                        ejeSelect.value
-                    ) || []
-            )
-            : metadatosDatos.apartados;
+    const valorAnterior =
+        apartadoSelect.value;
+
+
+    let fuente =
+        obtenerFuenteIndicadoresEstado();
+
+
+    if (ejeSelect.value) {
+
+        fuente =
+            fuente.filter(
+                d =>
+                    d.Eje ===
+                    ejeSelect.value
+            );
+    }
 
 
     const mapa =
-        new Map(
-            apartados.map(
-                apartado => [
-                    apartado.codigo,
-                    apartado.nombre
-                ]
-            )
-        );
+        new Map();
+
+
+    fuente.forEach(
+        d => {
+
+            if (!d.Apartado) {
+                return;
+            }
+
+
+            const existente =
+                mapa.get(
+                    d.Apartado
+                );
+
+
+            const anioActual =
+                Number(d.Anio) ||
+                -Infinity;
+
+
+            const anioExistente =
+                existente
+                    ? existente.anio
+                    : -Infinity;
+
+
+            if (
+                !existente ||
+                anioActual >
+                anioExistente
+            ) {
+
+                mapa.set(
+                    d.Apartado,
+                    {
+                        codigo:
+                            d.Apartado,
+
+                        nombre:
+                            obtenerNombreTaxonomia(
+                                "Apartado",
+                                "Nombre_Apartado",
+                                d.Apartado
+                            ),
+
+                        anio:
+                            anioActual
+                    }
+                );
+            }
+        }
+    );
 
 
     apartadoSelect.innerHTML =
         '<option value="">Todos los apartados</option>';
 
 
-    [...mapa.entries()]
+    [...mapa.values()]
 
         .sort(
             (a, b) =>
-                a[0].localeCompare(
-                    b[0],
+                a.codigo.localeCompare(
+                    b.codigo,
                     "es",
                     { numeric: true }
                 )
         )
 
         .forEach(
-            ([codigo, nombre]) => {
+            apartado => {
 
                 const opcion =
                     document.createElement(
@@ -1125,17 +1685,28 @@ function cargarApartados() {
 
 
                 opcion.value =
-                    codigo;
+                    apartado.codigo;
 
 
                 opcion.textContent =
-                    `${codigo} ${nombre}`;
+                    `${apartado.codigo} ${apartado.nombre}`;
 
 
-                apartadoSelect
-                    .appendChild(opcion);
+                apartadoSelect.appendChild(
+                    opcion
+                );
             }
         );
+
+
+    apartadoSelect.value =
+        valorAnterior &&
+        mapa.has(
+            valorAnterior
+        )
+
+            ? valorAnterior
+            : "";
 }
 
 
@@ -1151,53 +1722,19 @@ function cargarIndicadores() {
         .querySelectorAll(
             '#lista-indicadores input[name="indicadorCheck"]'
         )
-        .forEach(input => {
+        .forEach(
+            input => {
 
-            estadoSeleccionIndicadores.set(
-                input.value,
-                input.checked
-            );
-        });
-
-    // ETIQUETAS_INDICADORES_POR_ANIO
-    //
-    // Codigo_Tecnico es la identidad longitudinal estable.
-    // La etiqueta visible se toma del año más reciente
-    // entre los años actualmente seleccionados.
-    //
-    // La fuente ya no son los 65.000+ registros,
-    // sino el índice compacto de indicadores por año.
-
-    const aniosSeleccionados =
-        obtenerSeleccionados(
-            "anioCheck"
+                estadoSeleccionIndicadores.set(
+                    input.value,
+                    input.checked
+                );
+            }
         );
 
 
-    const aniosFuente =
-        aniosSeleccionados.length > 0
-            ? aniosSeleccionados
-            : metadatosDatos.anios;
-
-
-    let fuente = [];
-
-
-    aniosFuente.forEach(anio => {
-
-        const indicadoresAnio =
-            metadatosDatos
-                .indicadoresPorAnio
-                .get(anio);
-
-
-        if (indicadoresAnio) {
-
-            fuente.push(
-                ...indicadoresAnio.values()
-            );
-        }
-    });
+    let fuente =
+        obtenerFuenteIndicadoresEstado();
 
 
     if (ejeSelect.value) {
@@ -1226,51 +1763,54 @@ function cargarIndicadores() {
         new Map();
 
 
-    fuente.forEach(d => {
+    fuente.forEach(
+        d => {
 
-        const existente =
-            mapa.get(
-                d.Codigo_Tecnico
-            );
-
-
-        const anioActual =
-            Number(
-                d.Anio
-            );
+            const existente =
+                mapa.get(
+                    d.Codigo_Tecnico
+                );
 
 
-        const anioExistente =
-            existente
-                ? Number(
-                    existente.anio
-                )
-                : -Infinity;
+            const anioActual =
+                Number(
+                    d.Anio
+                );
 
 
-        if (
-            !existente ||
-            anioActual > anioExistente
-        ) {
+            const anioExistente =
+                existente
+                    ? Number(
+                        existente.anio
+                    )
+                    : -Infinity;
 
-            mapa.set(
-                d.Codigo_Tecnico,
-                {
-                    codigo:
-                        d.Codigo_REBIUN,
 
-                    tecnico:
-                        d.Codigo_Tecnico,
+            if (
+                !existente ||
+                anioActual >
+                anioExistente
+            ) {
 
-                    anio:
-                        d.Anio,
+                mapa.set(
+                    d.Codigo_Tecnico,
+                    {
+                        codigo:
+                            d.Codigo_REBIUN,
 
-                    texto:
-                        `${d.Codigo_REBIUN} ${d.Indicador}`
-                }
-            );
+                        tecnico:
+                            d.Codigo_Tecnico,
+
+                        anio:
+                            d.Anio,
+
+                        texto:
+                            `${d.Codigo_REBIUN} ${d.Indicador}`
+                    }
+                );
+            }
         }
-    });
+    );
 
 
     const contenedor =
@@ -1279,7 +1819,8 @@ function cargarIndicadores() {
         );
 
 
-    contenedor.innerHTML = "";
+    contenedor.innerHTML =
+        "";
 
 
     [...mapa.values()]
@@ -1293,73 +1834,96 @@ function cargarIndicadores() {
                 )
         )
 
-        .forEach(indicador => {
+        .forEach(
+            indicador => {
 
-            const label =
-                document.createElement(
-                    "label"
-                );
-
-
-            label.className =
-                "opcion-check";
+                const label =
+                    document.createElement(
+                        "label"
+                    );
 
 
-            label.dataset.busqueda =
-                normalizarBusqueda(
-                    `${indicador.codigo} ${indicador.tecnico} ${indicador.texto}`
-                );
+                label.className =
+                    "opcion-check";
 
 
-            const input =
-                document.createElement(
-                    "input"
-                );
+                label.dataset.busqueda =
+                    normalizarBusqueda(
+                        `${indicador.codigo} ${indicador.tecnico} ${indicador.texto}`
+                    );
 
 
-            input.type =
-                "checkbox";
+                const input =
+                    document.createElement(
+                        "input"
+                    );
 
 
-            input.name =
-                "indicadorCheck";
+                input.type =
+                    "checkbox";
 
 
-            input.value =
-                indicador.tecnico;
+                input.name =
+                    "indicadorCheck";
 
 
-            input.checked =
-                estadoSeleccionIndicadores.has(
-                    indicador.tecnico
-                )
-                    ? estadoSeleccionIndicadores.get(
+                input.value =
+                    indicador.tecnico;
+
+
+                input.checked =
+                    estadoSeleccionIndicadores.has(
                         indicador.tecnico
                     )
-                    : true;
+
+                        ? estadoSeleccionIndicadores.get(
+                            indicador.tecnico
+                        )
+
+                        : true;
 
 
-            const span =
-                document.createElement(
-                    "span"
+                const span =
+                    document.createElement(
+                        "span"
+                    );
+
+
+                span.textContent =
+                    indicador.texto;
+
+
+                label.appendChild(
+                    input
                 );
 
 
-            span.textContent =
-                indicador.texto;
+                label.appendChild(
+                    span
+                );
 
 
-            label.appendChild(input);
-
-            label.appendChild(span);
-
-            contenedor.appendChild(label);
-        });
+                contenedor.appendChild(
+                    label
+                );
+            }
+        );
 
 
     aplicarBusquedaIndicadores();
 
     actualizarContadores();
+}
+
+
+
+function actualizarTaxonomiaIndicadores() {
+
+    cargarEjes();
+
+    cargarApartados();
+
+    cargarIndicadores();
 }
 
 
@@ -1459,6 +2023,121 @@ function cargarAnios() {
 }
 
 
+function construirIndiceUsuariosPropios() {
+
+    indiceUsuariosPropios = new Map();
+
+    datos.forEach(fila => {
+
+        if (fila.Codigo_Tecnico !== "NUSUARIOPROP") {
+            return;
+        }
+
+        const textoValor =
+            String(fila.Valor).trim();
+
+        if (textoValor === "") {
+            return;
+        }
+
+        const valor =
+            Number(
+                textoValor.replace(",", ".")
+            );
+
+        if (!Number.isFinite(valor)) {
+            return;
+        }
+
+        const codigo =
+            fila.Codigo_Biblioteca_REBIUN;
+
+        if (!indiceUsuariosPropios.has(codigo)) {
+            indiceUsuariosPropios.set(
+                codigo,
+                new Map()
+            );
+        }
+
+        indiceUsuariosPropios
+            .get(codigo)
+            .set(fila.Anio, valor);
+    });
+}
+
+
+function clasificarMedianaUsuarios(mediana) {
+
+    if (mediana <= 20000) {
+        return "grupo1";
+    }
+
+    if (mediana <= 40000) {
+        return "grupo2";
+    }
+
+    return "grupo3";
+}
+
+
+function recalcularGruposTamano() {
+
+    const anios =
+        obtenerSeleccionados("anioCheck");
+
+    gruposTamanoBibliotecas = new Map();
+
+    metadatosBibliotecas.forEach(biblioteca => {
+
+        const valoresPorAnio =
+            indiceUsuariosPropios.get(
+                biblioteca.Codigo_Biblioteca_REBIUN
+            );
+
+        const valores =
+            anios
+                .map(anio =>
+                    valoresPorAnio
+                        ? valoresPorAnio.get(anio)
+                        : undefined
+                )
+                .filter(Number.isFinite);
+
+        const grupo =
+            valores.length === 0
+                ? "sin-dato"
+                : (() => {
+
+                    valores.sort(
+                        (a, b) => a - b
+                    );
+
+                    const centro =
+                        Math.floor(
+                            valores.length / 2
+                        );
+
+                    const mediana =
+                        valores.length % 2 === 1
+                            ? valores[centro]
+                            : (
+                                valores[centro - 1] +
+                                valores[centro]
+                            ) / 2;
+
+                    return clasificarMedianaUsuarios(
+                        mediana
+                    );
+                })();
+
+        gruposTamanoBibliotecas.set(
+            biblioteca.Codigo_Biblioteca_REBIUN,
+            grupo
+        );
+    });
+}
+
+
 
 /* =========================================================
    SELECCIÓN
@@ -1485,6 +2164,20 @@ function invalidarDatosActuales() {
     datosActuales = [];
 
     botonDescargar.disabled = true;
+
+    selectorVistas.hidden = true;
+
+    tablaElemento.hidden = true;
+
+    evolucionElemento.hidden = true;
+
+    comparacionElemento.hidden = true;
+
+    graficoEvolucionElemento.innerHTML = "";
+
+    graficoComparacionElemento.innerHTML = "";
+
+    resumenElemento.textContent = "";
 }
 
 
@@ -1506,6 +2199,14 @@ function marcarGrupo(
 
 
     invalidarDatosActuales();
+
+
+    if (nombreGrupo === "anioCheck") {
+
+        recalcularGruposTamano();
+
+        actualizarSegmentadoresInstitucionales();
+    }
 
 
     actualizarContadores();
@@ -1669,6 +2370,19 @@ titularidadSelect.addEventListener(
 );
 
 
+segmentadorTamano.addEventListener(
+    "change",
+    () => {
+
+        invalidarDatosActuales();
+
+        actualizarSegmentadoresInstitucionales(
+            "tamano"
+        );
+    }
+);
+
+
 buscarBiblioteca.addEventListener(
     "input",
     aplicarFiltrosBibliotecas
@@ -1797,6 +2511,13 @@ document
 
                 invalidarDatosActuales();
 
+                if (id === "lista-anios") {
+
+                    recalcularGruposTamano();
+
+                    actualizarSegmentadoresInstitucionales();
+                }
+
                 actualizarContadores();
             }
         );
@@ -1852,11 +2573,950 @@ function nombreDimension(campo) {
 }
 
 
+const coloresGraficos = [
+    "#338C87",
+    "#4E79A7",
+    "#E07B39",
+    "#7A6FAC",
+    "#5A9A68",
+    "#C95F5F",
+    "#B08A3E",
+    "#6D7C8A",
+    "#A4678A",
+    "#4F9DA6",
+    "#8C7853",
+    "#7B8F5A"
+];
+
+const colorPromedio = "#8E9797";
+
+
+function obtenerNumeroValor(valor) {
+
+    if (
+        valor === null ||
+        valor === undefined ||
+        String(valor).trim() === ""
+    ) {
+        return null;
+    }
+
+    const texto = String(valor).trim();
+    const normalizado =
+        texto.includes(",") && !texto.includes(".")
+            ? texto.replace(",", ".")
+            : texto;
+    const numero = Number(normalizado);
+
+    return Number.isFinite(numero)
+        ? numero
+        : null;
+}
+
+
+function calcularPromedioFilas(filas) {
+
+    const valores = filas
+        .map(fila => obtenerNumeroValor(fila.Valor))
+        .filter(Number.isFinite);
+
+    return {
+        valor: valores.length
+            ? valores.reduce((suma, valor) => suma + valor, 0) /
+                valores.length
+            : null,
+        cantidad: valores.length
+    };
+}
+
+
+function obtenerIndicadoresDatosActuales() {
+
+    const porCodigo = new Map();
+
+    datosActuales.forEach(fila => {
+
+        const anterior = porCodigo.get(fila.Codigo_Tecnico);
+
+        if (
+            !anterior ||
+            Number(fila.Anio) > Number(anterior.Anio)
+        ) {
+            porCodigo.set(fila.Codigo_Tecnico, fila);
+        }
+    });
+
+    return [...porCodigo.values()]
+        .sort((a, b) =>
+            a.Codigo_REBIUN.localeCompare(
+                b.Codigo_REBIUN,
+                "es",
+                { numeric: true }
+            )
+        );
+}
+
+
+function rellenarSelectorIndicadores(select, indicadores) {
+
+    select.innerHTML = "";
+
+    indicadores.forEach(indicador => {
+
+        const opcion = document.createElement("option");
+        opcion.value = indicador.Codigo_Tecnico;
+        opcion.textContent =
+            `${indicador.Codigo_REBIUN} ${indicador.Indicador}`;
+        select.appendChild(opcion);
+    });
+}
+
+
+function activarVista(nombreVista) {
+
+    if (!datosActuales.length) {
+        return;
+    }
+
+    const paneles = {
+        tabla: tablaElemento,
+        evolucion: evolucionElemento,
+        comparacion: comparacionElemento
+    };
+
+    Object.entries(paneles).forEach(
+        ([nombre, panel]) => {
+            panel.hidden = nombre !== nombreVista;
+        }
+    );
+
+    selectorVistas
+        .querySelectorAll('[role="tab"]')
+        .forEach(boton => {
+            const activo = boton.dataset.vista === nombreVista;
+            boton.classList.toggle("activa", activo);
+            boton.setAttribute("aria-selected", activo ? "true" : "false");
+            boton.tabIndex = activo ? 0 : -1;
+        });
+
+    if (nombreVista === "evolucion") {
+        renderizarEvolucion();
+    }
+
+    if (nombreVista === "comparacion") {
+        renderizarComparacion();
+    }
+}
+
+
+function prepararVisualizaciones() {
+
+    const indicadores = obtenerIndicadoresDatosActuales();
+
+    rellenarSelectorIndicadores(
+        indicadorEvolucionSelect,
+        indicadores
+    );
+    rellenarSelectorIndicadores(
+        indicadorComparacionSelect,
+        indicadores
+    );
+
+    reconstruirAniosComparacion();
+
+    selectorVistas.hidden = false;
+    activarVista("tabla");
+}
+
+
+function reconstruirAniosComparacion() {
+
+    const codigo = indicadorComparacionSelect.value;
+    const anios = [
+        ...new Set(
+            datosActuales
+                .filter(fila => fila.Codigo_Tecnico === codigo)
+                .map(fila => fila.Anio)
+        )
+    ].sort((a, b) => Number(a) - Number(b));
+
+    if (!anios.includes(anioComparacionActivo)) {
+        anioComparacionActivo = anios[anios.length - 1] || "";
+    }
+
+    aniosComparacionElemento.innerHTML = "";
+
+    anios.forEach(anio => {
+        const boton = document.createElement("button");
+        const activo = anio === anioComparacionActivo;
+        boton.type = "button";
+        boton.className = `chip-anio${activo ? " activo" : ""}`;
+        boton.textContent = anio;
+        boton.setAttribute("aria-pressed", activo ? "true" : "false");
+        boton.addEventListener("click", () => {
+            anioComparacionActivo = anio;
+            reconstruirAniosComparacion();
+            renderizarComparacion();
+        });
+        aniosComparacionElemento.appendChild(boton);
+    });
+}
+
+
+function colorBiblioteca(biblioteca) {
+
+    let hash = 0;
+
+    for (const caracter of biblioteca) {
+        hash = (hash * 31 + caracter.codePointAt(0)) >>> 0;
+    }
+
+    return coloresGraficos[hash % coloresGraficos.length];
+}
+
+
+function crearSVG(ancho, alto, etiqueta) {
+
+    const espacio = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(espacio, "svg");
+    svg.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+    svg.setAttribute("class", "grafico-svg");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", etiqueta);
+    return svg;
+}
+
+
+function agregarElementoSVG(svg, tipo, atributos, texto = null) {
+
+    const elemento = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        tipo
+    );
+
+    Object.entries(atributos).forEach(
+        ([nombre, valor]) => elemento.setAttribute(nombre, valor)
+    );
+
+    if (texto !== null) {
+        elemento.textContent = texto;
+    }
+
+    svg.appendChild(elemento);
+    return elemento;
+}
+
+
+function renderizarEvolucion() {
+
+    const codigo = indicadorEvolucionSelect.value;
+    const filas = datosActuales.filter(
+        fila => fila.Codigo_Tecnico === codigo
+    );
+    const anios = [
+        ...new Set(datosActuales.map(fila => fila.Anio))
+    ].sort((a, b) => Number(a) - Number(b));
+    const bibliotecas = [
+        ...new Set(filas.map(fila => fila.Biblioteca))
+    ].sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+    const valores = filas
+        .map(fila => obtenerNumeroValor(fila.Valor))
+        .filter(Number.isFinite);
+
+    graficoEvolucionElemento.innerHTML = "";
+
+    if (!codigo || !anios.length || !valores.length) {
+        graficoEvolucionElemento.innerHTML =
+            '<div class="mensaje">No existen datos numéricos suficientes para mostrar la evolución.</div>';
+        return;
+    }
+
+    const ancho = 900;
+    const alto = 430;
+    const margen = { superior: 25, derecha: 25, inferior: 55, izquierda: 80 };
+    const anchoUtil = ancho - margen.izquierda - margen.derecha;
+    const altoUtil = alto - margen.superior - margen.inferior;
+    const maximo = Math.max(...valores, 0);
+    const escalaMaxima = maximo || 1;
+    const x = anio =>
+        margen.izquierda +
+        (anios.length === 1
+            ? anchoUtil / 2
+            : anios.indexOf(anio) * anchoUtil / (anios.length - 1));
+    const y = valor =>
+        margen.superior + altoUtil - valor * altoUtil / escalaMaxima;
+    const svg = crearSVG(ancho, alto, "Gráfico de evolución por biblioteca");
+
+    for (let i = 0; i <= 4; i += 1) {
+        const valor = escalaMaxima * i / 4;
+        const posicionY = y(valor);
+        agregarElementoSVG(svg, "line", {
+            x1: margen.izquierda,
+            y1: posicionY,
+            x2: ancho - margen.derecha,
+            y2: posicionY,
+            class: "grafico-guia"
+        });
+        agregarElementoSVG(svg, "text", {
+            x: margen.izquierda - 8,
+            y: posicionY + 4,
+            "text-anchor": "end",
+            class: "grafico-texto"
+        }, formatearValor(valor));
+    }
+
+    anios.forEach(anio => {
+        agregarElementoSVG(svg, "text", {
+            x: x(anio),
+            y: alto - margen.inferior + 24,
+            "text-anchor": "middle",
+            class: "grafico-texto"
+        }, anio);
+    });
+
+    agregarElementoSVG(svg, "line", {
+        x1: margen.izquierda,
+        y1: margen.superior,
+        x2: margen.izquierda,
+        y2: alto - margen.inferior,
+        class: "grafico-eje"
+    });
+    agregarElementoSVG(svg, "line", {
+        x1: margen.izquierda,
+        y1: alto - margen.inferior,
+        x2: ancho - margen.derecha,
+        y2: alto - margen.inferior,
+        class: "grafico-eje"
+    });
+
+    const leyenda = document.createElement("div");
+    leyenda.className = "grafico-leyenda";
+
+    bibliotecas.forEach(biblioteca => {
+        const color = colorBiblioteca(biblioteca);
+        const mapa = new Map(
+            filas
+                .filter(fila => fila.Biblioteca === biblioteca)
+                .map(fila => [fila.Anio, obtenerNumeroValor(fila.Valor)])
+        );
+        let puntosSegmento = [];
+
+        const dibujarSegmento = () => {
+            if (puntosSegmento.length > 1) {
+                agregarElementoSVG(svg, "polyline", {
+                    points: puntosSegmento.join(" "),
+                    fill: "none",
+                    stroke: color,
+                    "stroke-width": 2
+                });
+            }
+            puntosSegmento = [];
+        };
+
+        anios.forEach(anio => {
+            const valor = mapa.get(anio);
+
+            if (!Number.isFinite(valor)) {
+                dibujarSegmento();
+                return;
+            }
+
+            const punto = `${x(anio)},${y(valor)}`;
+            puntosSegmento.push(punto);
+            const circulo = agregarElementoSVG(svg, "circle", {
+                cx: x(anio),
+                cy: y(valor),
+                r: 4,
+                fill: color,
+                stroke: "#fff",
+                "stroke-width": 1
+            });
+            const titulo = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "title"
+            );
+            titulo.textContent =
+                `${biblioteca} · ${anio}: ${formatearValor(valor)}`;
+            circulo.appendChild(titulo);
+        });
+        dibujarSegmento();
+
+        const item = document.createElement("span");
+        item.className = "grafico-leyenda-item";
+        item.innerHTML =
+            `<span class="grafico-leyenda-color" style="background:${color}"></span>` +
+            `<span>${escaparHTML(biblioteca)}</span>`;
+        leyenda.appendChild(item);
+    });
+
+    if (mostrarPromedioEvolucion.checked) {
+        let puntosSegmento = [];
+
+        const dibujarSegmentoPromedio = () => {
+            if (puntosSegmento.length > 1) {
+                agregarElementoSVG(svg, "polyline", {
+                    points: puntosSegmento.join(" "),
+                    fill: "none",
+                    stroke: colorPromedio,
+                    "stroke-width": 1.5,
+                    "stroke-dasharray": "4 4",
+                    opacity: 0.75
+                });
+            }
+            puntosSegmento = [];
+        };
+
+        anios.forEach(anio => {
+            const promedio = calcularPromedioFilas(
+                filas.filter(fila => fila.Anio === anio)
+            );
+
+            if (!Number.isFinite(promedio.valor)) {
+                dibujarSegmentoPromedio();
+                return;
+            }
+
+            puntosSegmento.push(
+                `${x(anio)},${y(promedio.valor)}`
+            );
+            const areaTooltip = agregarElementoSVG(svg, "circle", {
+                cx: x(anio),
+                cy: y(promedio.valor),
+                r: 7,
+                fill: "transparent",
+                stroke: "none",
+                "pointer-events": "all"
+            });
+            const titulo = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "title"
+            );
+            titulo.textContent =
+                `${anio}\n` +
+                `Promedio: ${formatearValor(promedio.valor)}\n` +
+                `${promedio.cantidad} bibliotecas con dato`;
+            areaTooltip.appendChild(titulo);
+        });
+        dibujarSegmentoPromedio();
+
+        const itemPromedio = document.createElement("span");
+        itemPromedio.className =
+            "grafico-leyenda-item grafico-leyenda-promedio";
+        itemPromedio.innerHTML =
+            '<span class="grafico-leyenda-linea-promedio"></span>' +
+            "<span>Promedio de bibliotecas seleccionadas</span>";
+        leyenda.appendChild(itemPromedio);
+    }
+
+    graficoEvolucionElemento.appendChild(svg);
+    graficoEvolucionElemento.appendChild(leyenda);
+}
+
+
+function renderizarComparacion() {
+
+    const codigo = indicadorComparacionSelect.value;
+    const anio = anioComparacionActivo;
+    const barras = datosActuales
+        .filter(fila =>
+            fila.Codigo_Tecnico === codigo &&
+            fila.Anio === anio
+        )
+        .map(fila => ({
+            biblioteca: fila.Biblioteca,
+            valor: obtenerNumeroValor(fila.Valor)
+        }))
+        .filter(barra => Number.isFinite(barra.valor))
+        .sort((a, b) => b.valor - a.valor);
+
+    graficoComparacionElemento.innerHTML = "";
+
+    if (!codigo || !anio || !barras.length) {
+        graficoComparacionElemento.innerHTML =
+            '<div class="mensaje">No existen datos numéricos para esta combinación de indicador y año.</div>';
+        return;
+    }
+
+    const ancho = 900;
+    const altoFila = 28;
+    const margen = { superior: 18, derecha: 105, inferior: 25, izquierda: 260 };
+    const alto = margen.superior + margen.inferior + barras.length * altoFila;
+    const anchoUtil = ancho - margen.izquierda - margen.derecha;
+    const maximo = Math.max(...barras.map(barra => barra.valor), 0) || 1;
+    const svg = crearSVG(ancho, alto, "Gráfico de comparación entre bibliotecas");
+
+    barras.forEach((barra, indice) => {
+        const posicionY = margen.superior + indice * altoFila;
+        const anchoBarra = barra.valor * anchoUtil / maximo;
+
+        agregarElementoSVG(svg, "text", {
+            x: margen.izquierda - 8,
+            y: posicionY + 17,
+            "text-anchor": "end",
+            class: "grafico-texto grafico-etiqueta-barra"
+        }, barra.biblioteca);
+        agregarElementoSVG(svg, "rect", {
+            x: margen.izquierda,
+            y: posicionY + 3,
+            width: Math.max(0, anchoBarra),
+            height: 18,
+            fill: "#338C87"
+        });
+        agregarElementoSVG(svg, "text", {
+            x: margen.izquierda + anchoBarra + 7,
+            y: posicionY + 17,
+            class: "grafico-texto"
+        }, formatearValor(barra.valor));
+    });
+
+    const promedio = calcularPromedioFilas(
+        barras.map(barra => ({ Valor: barra.valor }))
+    );
+
+    if (Number.isFinite(promedio.valor)) {
+        const posicionPromedio =
+            margen.izquierda + promedio.valor * anchoUtil / maximo;
+        const etiquetaALaDerecha =
+            posicionPromedio < ancho - margen.derecha - 250;
+
+        agregarElementoSVG(svg, "line", {
+            x1: posicionPromedio,
+            y1: margen.superior,
+            x2: posicionPromedio,
+            y2: alto - margen.inferior,
+            stroke: colorPromedio,
+            "stroke-width": 1.5,
+            "stroke-dasharray": "4 4",
+            opacity: 0.75
+        });
+        agregarElementoSVG(svg, "text", {
+            x: posicionPromedio + (etiquetaALaDerecha ? 6 : -6),
+            y: 12,
+            "text-anchor": etiquetaALaDerecha ? "start" : "end",
+            class: "grafico-texto grafico-etiqueta-promedio",
+            fill: colorPromedio
+        }, `Promedio de bibliotecas seleccionadas: ${formatearValor(promedio.valor)}`);
+    }
+
+    graficoComparacionElemento.appendChild(svg);
+}
+
+
+function cerrarMenusDescarga(excepto = null) {
+
+    document
+        .querySelectorAll(".menu-descarga-grafico")
+        .forEach(menu => {
+            if (menu === excepto) {
+                return;
+            }
+            menu.hidden = true;
+            const boton = document.querySelector(
+                `[data-menu-descarga="${menu.dataset.menu}"]`
+            );
+            if (boton) {
+                boton.setAttribute("aria-expanded", "false");
+            }
+        });
+}
+
+
+function svgExportable(tipoVista) {
+
+    const contenedor = tipoVista === "evolucion"
+        ? graficoEvolucionElemento
+        : graficoComparacionElemento;
+    const original = contenedor.querySelector("svg");
+
+    if (!original) {
+        return null;
+    }
+
+    const clon = original.cloneNode(true);
+    const partesVista = clon.getAttribute("viewBox")
+        .split(/\s+/)
+        .map(Number);
+    const ancho = partesVista[2];
+    let alto = partesVista[3];
+
+    const estilo = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "style"
+    );
+    estilo.textContent =
+        ".grafico-texto{fill:#333;font:12px 'Segoe UI',Arial,sans-serif}" +
+        ".grafico-etiqueta-barra{font-size:11px}" +
+        ".grafico-etiqueta-promedio{fill:#8E9797;font-size:11px;font-weight:500}" +
+        ".grafico-eje{stroke:#899796;stroke-width:1}" +
+        ".grafico-guia{stroke:#e4ebea;stroke-width:1}";
+    clon.insertBefore(estilo, clon.firstChild);
+
+    if (tipoVista === "evolucion") {
+        const items = [
+            ...contenedor.querySelectorAll(".grafico-leyenda-item")
+        ];
+        const inicioLeyenda = alto + 18;
+        const grupo = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "g"
+        );
+
+        items.forEach((item, indice) => {
+            const y = inicioLeyenda + indice * 20;
+            const esPromedio = item.classList.contains(
+                "grafico-leyenda-promedio"
+            );
+
+            if (esPromedio) {
+                const linea = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "line"
+                );
+                linea.setAttribute("x1", "10");
+                linea.setAttribute("y1", String(y - 4));
+                linea.setAttribute("x2", "26");
+                linea.setAttribute("y2", String(y - 4));
+                linea.setAttribute("stroke", colorPromedio);
+                linea.setAttribute("stroke-width", "1.5");
+                linea.setAttribute("stroke-dasharray", "4 4");
+                linea.setAttribute("opacity", "0.75");
+                grupo.appendChild(linea);
+            } else {
+                const circulo = document.createElementNS(
+                    "http://www.w3.org/2000/svg",
+                    "circle"
+                );
+                circulo.setAttribute("cx", "18");
+                circulo.setAttribute("cy", String(y - 4));
+                circulo.setAttribute("r", "5");
+                circulo.setAttribute(
+                    "fill",
+                    getComputedStyle(
+                        item.querySelector(".grafico-leyenda-color")
+                    ).backgroundColor
+                );
+                grupo.appendChild(circulo);
+            }
+
+            const texto = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "text"
+            );
+            texto.setAttribute("x", "30");
+            texto.setAttribute("y", String(y));
+            texto.setAttribute("class", "grafico-texto");
+            texto.textContent = item.textContent.trim();
+            grupo.appendChild(texto);
+        });
+
+        clon.appendChild(grupo);
+        alto = inicioLeyenda + items.length * 20 + 8;
+    }
+
+    clon.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
+    clon.setAttribute("width", String(ancho));
+    clon.setAttribute("height", String(alto));
+
+    const fondo = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "rect"
+    );
+    fondo.setAttribute("x", "0");
+    fondo.setAttribute("y", "0");
+    fondo.setAttribute("width", "100%");
+    fondo.setAttribute("height", "100%");
+    fondo.setAttribute("fill", "#fff");
+    clon.insertBefore(fondo, clon.firstChild);
+
+    return { svg: clon, ancho, alto };
+}
+
+
+function nombreArchivoGrafico(tipoVista, extension) {
+
+    const codigo = tipoVista === "evolucion"
+        ? indicadorEvolucionSelect.value
+        : indicadorComparacionSelect.value;
+    const fecha = new Date().toISOString().slice(0, 10);
+    const partes = ["REBIUN", tipoVista, codigo];
+
+    if (tipoVista === "comparacion") {
+        partes.push(anioComparacionActivo);
+    }
+
+    partes.push(fecha);
+
+    return `${partes.join("_")}.${extension}`;
+}
+
+
+function descargarGraficoPNG(tipoVista) {
+
+    const exportacion = svgExportable(tipoVista);
+
+    if (!exportacion) {
+        return;
+    }
+
+    const serializado = new XMLSerializer()
+        .serializeToString(exportacion.svg);
+    const blobSVG = new Blob(
+        [serializado],
+        { type: "image/svg+xml;charset=utf-8" }
+    );
+    const urlSVG = URL.createObjectURL(blobSVG);
+    const imagen = new Image();
+
+    imagen.onload = () => {
+        const escala = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(exportacion.ancho * escala);
+        canvas.height = Math.ceil(exportacion.alto * escala);
+        const contexto = canvas.getContext("2d");
+        contexto.fillStyle = "#fff";
+        contexto.fillRect(0, 0, canvas.width, canvas.height);
+        contexto.drawImage(imagen, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(urlSVG);
+
+        canvas.toBlob(blobPNG => {
+            if (!blobPNG) {
+                return;
+            }
+            const urlPNG = URL.createObjectURL(blobPNG);
+            const enlace = document.createElement("a");
+            enlace.href = urlPNG;
+            enlace.download = nombreArchivoGrafico(tipoVista, "png");
+            document.body.appendChild(enlace);
+            enlace.click();
+            enlace.remove();
+            window.setTimeout(
+                () => URL.revokeObjectURL(urlPNG),
+                1000
+            );
+        }, "image/png");
+    };
+
+    imagen.src = urlSVG;
+}
+
+
+function prepararImpresionGrafico(tipoVista) {
+
+    const esEvolucion = tipoVista === "evolucion";
+    const selectorIndicador = esEvolucion
+        ? indicadorEvolucionSelect
+        : indicadorComparacionSelect;
+    const contenedor = esEvolucion
+        ? graficoEvolucionElemento
+        : graficoComparacionElemento;
+    const titulo = esEvolucion
+        ? "Evolución"
+        : "Comparación";
+
+    vistaImpresionGrafico.innerHTML = "";
+
+    const encabezado = document.createElement("h1");
+    encabezado.textContent = titulo;
+    vistaImpresionGrafico.appendChild(encabezado);
+
+    const metadatos = document.createElement("div");
+    metadatos.className = "metadatos-impresion";
+    metadatos.textContent =
+        `Indicador: ${selectorIndicador.selectedOptions[0]?.textContent || ""}` +
+        (esEvolucion ? "" : ` · Año: ${anioComparacionActivo}`);
+    vistaImpresionGrafico.appendChild(metadatos);
+
+    vistaImpresionGrafico.appendChild(contenedor.cloneNode(true));
+
+    const fuente = document.createElement("div");
+    fuente.className = "fuente-grafico";
+    fuente.textContent = "Fuente: Estadísticas REBIUN";
+    vistaImpresionGrafico.appendChild(fuente);
+
+    vistaImpresionGrafico.setAttribute("aria-hidden", "false");
+    document.body.classList.add("imprimiendo-grafico");
+
+    const limpiar = () => {
+        document.body.classList.remove("imprimiendo-grafico");
+        vistaImpresionGrafico.setAttribute("aria-hidden", "true");
+        vistaImpresionGrafico.innerHTML = "";
+    };
+
+    window.addEventListener("afterprint", limpiar, { once: true });
+    window.print();
+}
+
+
+document
+    .querySelectorAll("[data-menu-descarga]")
+    .forEach(boton => {
+        boton.addEventListener("click", evento => {
+            evento.stopPropagation();
+            const menu = document.querySelector(
+                `[data-menu="${boton.dataset.menuDescarga}"]`
+            );
+            const abrir = menu.hidden;
+            cerrarMenusDescarga(abrir ? menu : null);
+            menu.hidden = !abrir;
+            boton.setAttribute("aria-expanded", abrir ? "true" : "false");
+        });
+    });
+
+
+document
+    .querySelectorAll("[data-descarga]")
+    .forEach(boton => {
+        boton.addEventListener("click", () => {
+            const tipoVista = boton.dataset.vistaDescarga;
+            cerrarMenusDescarga();
+
+            if (boton.dataset.descarga === "png") {
+                descargarGraficoPNG(tipoVista);
+            } else {
+                prepararImpresionGrafico(tipoVista);
+            }
+        });
+    });
+
+
+document.addEventListener("click", () => cerrarMenusDescarga());
+
+
+selectorVistas
+    .querySelectorAll('[role="tab"]')
+    .forEach(boton => {
+        boton.addEventListener(
+            "click",
+            () => activarVista(boton.dataset.vista)
+        );
+        boton.addEventListener(
+            "keydown",
+            evento => {
+                if (!["ArrowLeft", "ArrowRight"].includes(evento.key)) {
+                    return;
+                }
+                evento.preventDefault();
+                const pestanas = [
+                    ...selectorVistas.querySelectorAll('[role="tab"]')
+                ];
+                const desplazamiento = evento.key === "ArrowRight" ? 1 : -1;
+                const indice = (
+                    pestanas.indexOf(boton) + desplazamiento + pestanas.length
+                ) % pestanas.length;
+                pestanas[indice].focus();
+                activarVista(pestanas[indice].dataset.vista);
+            }
+        );
+    });
+
+
+indicadorEvolucionSelect.addEventListener(
+    "change",
+    renderizarEvolucion
+);
+
+mostrarPromedioEvolucion.addEventListener(
+    "change",
+    renderizarEvolucion
+);
+
+indicadorComparacionSelect.addEventListener(
+    "change",
+    () => {
+        reconstruirAniosComparacion();
+        renderizarComparacion();
+    }
+);
+
+
 
 
 /* =========================================================
    ACTUALIZACIÓN DE ETIQUETAS SEGÚN AÑOS
    ========================================================= */
+
+function actualizarBotonesEstadoIndicadores() {
+
+    document
+        .querySelectorAll(
+            "[data-estado-indicadores]"
+        )
+        .forEach(
+            boton => {
+
+                const activo =
+                    boton.dataset
+                        .estadoIndicadores ===
+                    estadoFiltroIndicadores;
+
+
+                boton.classList.toggle(
+                    "activo",
+                    activo
+                );
+
+
+                boton.setAttribute(
+                    "aria-pressed",
+                    activo
+                        ? "true"
+                        : "false"
+                );
+            }
+        );
+}
+
+
+
+document
+    .querySelectorAll(
+        "[data-estado-indicadores]"
+    )
+    .forEach(
+        boton => {
+
+            boton.addEventListener(
+                "click",
+                () => {
+
+                    const nuevoEstado =
+                        boton.dataset
+                            .estadoIndicadores;
+
+
+                    if (
+                        nuevoEstado ===
+                        estadoFiltroIndicadores
+                    ) {
+
+                        return;
+                    }
+
+
+                    estadoFiltroIndicadores =
+                        nuevoEstado;
+
+
+                    actualizarBotonesEstadoIndicadores();
+
+
+                    buscarIndicador.value =
+                        "";
+
+
+                    invalidarDatosActuales();
+
+
+                    actualizarTaxonomiaIndicadores();
+                }
+            );
+        }
+    );
+
+
+actualizarBotonesEstadoIndicadores();
+
+
 
 document
     .getElementById("lista-anios")
@@ -1864,7 +3524,7 @@ document
         "change",
         () => {
 
-            cargarIndicadores();
+            actualizarTaxonomiaIndicadores();
 
             actualizarContadores();
 
@@ -1879,7 +3539,7 @@ document
         "click",
         () => {
 
-            cargarIndicadores();
+            actualizarTaxonomiaIndicadores();
 
             actualizarContadores();
 
@@ -1894,7 +3554,7 @@ document
         "click",
         () => {
 
-            cargarIndicadores();
+            actualizarTaxonomiaIndicadores();
 
             actualizarContadores();
 
@@ -1952,6 +3612,8 @@ function generarTabla() {
 
 
     const mostrarMensaje = mensaje => {
+
+        tablaElemento.hidden = false;
 
         tablaElemento.innerHTML =
             `<div class="mensaje">${mensaje}</div>`;
@@ -2307,6 +3969,8 @@ function generarTabla() {
 
     datosActuales =
         filtrados;
+
+    prepararVisualizaciones();
 
     botonDescargar.disabled = false;
 }

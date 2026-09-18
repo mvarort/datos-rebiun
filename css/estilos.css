@@ -1,4 +1,4 @@
-﻿body {
+body {
     font-family: Arial, Helvetica, sans-serif;
     margin: 0;
     background: #f5f6f7;
@@ -13,6 +13,22 @@ main {
 
 h1 {
     margin-bottom: 5px;
+}
+
+.cabecera-aplicacion {
+    margin-bottom: 0.35rem;
+}
+
+.cabecera-aplicacion h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    line-height: 1.15;
+}
+
+.subtitulo-aplicacion {
+    margin: 0.3rem 0 0;
+    color: #555;
+    font-size: 1rem;
 }
 
 h2 {
@@ -59,6 +75,44 @@ h2 {
     display: flex;
     flex-direction: column;
     min-width: 240px;
+}
+
+.segmentador-tamano {
+    width: 100%;
+    margin: -4px 0 0;
+    padding: 0;
+    border: 0;
+}
+
+.segmentador-tamano legend {
+    margin-bottom: 6px;
+    padding: 0;
+    font-weight: bold;
+}
+
+.opciones-tamano {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.opcion-tamano {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 3px;
+    font-weight: normal;
+    line-height: 1.25;
+}
+
+.opcion-tamano:has(input:disabled) {
+    color: #888;
+}
+
+.opcion-tamano input {
+    margin: 0;
 }
 
 label {
@@ -184,6 +238,268 @@ button.mini {
 
 #tabla {
     overflow-x: auto;
+}
+
+.selector-vistas {
+    display: flex;
+    gap: 0.3rem;
+    margin: 0 0 0.8rem;
+    border-bottom: 1px solid var(--rebiun-borde-suave, #d9e3e2);
+}
+
+.selector-vistas[hidden] {
+    display: none;
+}
+
+.pestana-vista {
+    margin-bottom: -1px;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px 4px 0 0;
+    background: #f7f9f9;
+}
+
+.pestana-vista.activa {
+    color: #fff;
+    border-color: var(--rebiun-turquesa-oscuro, #2d7e79);
+    background: var(--rebiun-turquesa, #338c87);
+}
+
+.pestana-vista.activa:hover {
+    background: var(--rebiun-turquesa-oscuro, #2d7e79);
+}
+
+.vista-grafico {
+    min-width: 0;
+}
+
+.controles-grafico {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 0.8rem;
+}
+
+.controles-grafico .campo {
+    min-width: min(100%, 280px);
+}
+
+.control-promedio {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.45rem;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.control-promedio input {
+    margin: 0;
+}
+
+.contenedor-grafico {
+    overflow-x: auto;
+    padding: 0.75rem;
+    border: 1px solid var(--rebiun-borde-suave, #d9e3e2);
+    background: #fff;
+}
+
+.grafico-svg {
+    display: block;
+    width: 100%;
+    min-width: 620px;
+    height: auto;
+    font-family: inherit;
+}
+
+.grafico-eje {
+    stroke: #899796;
+    stroke-width: 1;
+}
+
+.grafico-guia {
+    stroke: #e4ebea;
+    stroke-width: 1;
+}
+
+.grafico-texto {
+    fill: var(--rebiun-texto, #333);
+    font-size: 12px;
+}
+
+.grafico-etiqueta-barra {
+    font-size: 11px;
+}
+
+.grafico-etiqueta-promedio {
+    fill: #8e9797;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.grafico-leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 1rem;
+    margin-top: 0.8rem;
+    font-size: 12px;
+}
+
+.grafico-leyenda-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.grafico-leyenda-color {
+    width: 0.8rem;
+    height: 0.8rem;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.grafico-leyenda-linea-promedio {
+    width: 1.35rem;
+    height: 0;
+    border-top: 1.5px dashed #8e9797;
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.selector-anios-comparacion {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.selector-anios-comparacion legend {
+    margin-bottom: 6px;
+    padding: 0;
+    font-weight: bold;
+}
+
+.chips-anios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.chip-anio {
+    min-width: 3.4rem;
+    padding: 0.32rem 0.6rem;
+    background: #f7f9f9;
+}
+
+.chip-anio.activo {
+    color: #fff;
+    border-color: var(--rebiun-turquesa-oscuro, #2d7e79);
+    background: var(--rebiun-turquesa, #338c87);
+}
+
+.chip-anio.activo:hover {
+    background: var(--rebiun-turquesa-oscuro, #2d7e79);
+}
+
+.descarga-grafico {
+    position: relative;
+    margin-left: auto;
+}
+
+.boton-descarga-grafico {
+    white-space: nowrap;
+}
+
+.menu-descarga-grafico {
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 0.25rem);
+    right: 0;
+    min-width: 8rem;
+    padding: 0.25rem;
+    border: 1px solid var(--rebiun-borde-suave, #d9e3e2);
+    border-radius: 4px;
+    background: #fff;
+    box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
+}
+
+.menu-descarga-grafico[hidden] {
+    display: none;
+}
+
+.menu-descarga-grafico button {
+    display: block;
+    width: 100%;
+    border: 0;
+    text-align: left;
+    background: transparent;
+}
+
+.vista-impresion-grafico {
+    display: none;
+}
+
+@media (max-width: 700px) {
+    .pestana-vista {
+        flex: 1 1 0;
+        padding-right: 0.35rem;
+        padding-left: 0.35rem;
+    }
+
+    .contenedor-grafico {
+        padding: 0.45rem;
+    }
+
+    .descarga-grafico {
+        margin-left: 0;
+    }
+}
+
+@media print {
+    @page {
+        size: landscape;
+        margin: 12mm;
+    }
+
+    body.imprimiendo-grafico {
+        background: #fff;
+    }
+
+    body.imprimiendo-grafico main {
+        display: none !important;
+    }
+
+    body.imprimiendo-grafico .vista-impresion-grafico {
+        display: block;
+        color: #222;
+    }
+
+    .vista-impresion-grafico h1 {
+        margin: 0 0 0.4rem;
+        font-size: 20pt;
+    }
+
+    .vista-impresion-grafico .metadatos-impresion {
+        margin-bottom: 0.8rem;
+        font-size: 11pt;
+    }
+
+    .vista-impresion-grafico .contenedor-grafico {
+        overflow: visible;
+        padding: 0;
+        border: 0;
+    }
+
+    .vista-impresion-grafico .grafico-svg {
+        width: 100%;
+        min-width: 0;
+        max-height: 155mm;
+    }
+
+    .vista-impresion-grafico .fuente-grafico {
+        margin-top: 0.7rem;
+        font-size: 9pt;
+    }
 }
 
 table {
@@ -613,5 +929,258 @@ a {
 /* Evita que el contenido del panel Años se estire verticalmente */
 .panel-anios {
     align-content: flex-start;
+}
+
+
+
+/* FILTRO_ESTADO_INDICADORES */
+
+.campo-estado-indicadores {
+    min-width: 290px;
+    flex: 1 1 290px;
+    max-width: 380px;
+}
+
+
+.etiqueta-control {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+
+.botones-estado-indicadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+
+.boton-estado-indicadores {
+    padding: 0.34rem 0.65rem;
+    white-space: nowrap;
+}
+
+
+.boton-estado-indicadores.activo {
+    color: #fff;
+    background-color: #338c87;
+    border-color: #2d7e79;
+}
+
+
+.boton-estado-indicadores.activo:hover {
+    color: #fff;
+    background-color: #2d7e79;
+}
+
+
+@media (max-width: 850px) {
+
+    .campo-estado-indicadores {
+        max-width: none;
+    }
+}
+
+
+
+/* AJUSTE_VISUAL_SEGMENTADOR_TAMANO */
+
+.segmentador-tamano {
+    box-sizing: border-box;
+
+    flex: 0 1 360px;
+
+    width: 360px;
+    max-width: 100%;
+
+    margin:
+        1.05rem
+        auto
+        0.65rem;
+
+    padding:
+        0.75rem
+        1rem
+        0.70rem;
+
+    border:
+        1px solid
+        var(
+            --rebiun-borde-suave,
+            #d9e3e2
+        );
+
+    border-radius: 5px;
+
+    background-color: #fbfcfc;
+}
+
+
+.segmentador-tamano legend {
+    padding:
+        0
+        0.35rem;
+
+    color:
+        var(
+            --rebiun-turquesa-oscuro,
+            #2d7e79
+        );
+
+    font-weight: 600;
+}
+
+
+.segmentador-tamano .opciones-tamano {
+    display: flex;
+    flex-direction: column;
+
+    gap: 0.25rem;
+}
+
+
+.segmentador-tamano .opcion-tamano {
+    display: flex;
+    align-items: center;
+
+    gap: 0.4rem;
+
+    margin: 0;
+
+    line-height: 1.25;
+}
+
+
+.segmentador-tamano .opcion-tamano input[type="radio"] {
+    margin: 0;
+}
+
+
+@media (max-width: 850px) {
+
+    .segmentador-tamano {
+        width: 100%;
+        flex-basis: 100%;
+
+        margin-top: 0.85rem;
+    }
+}
+
+
+
+/* LAYOUT_TAMANO_DOS_FILAS */
+
+/* El segmentador ocupa una fila propia, pero su caja queda
+   alineada a la izquierda y no se extiende innecesariamente. */
+
+.fila-segmentador-tamano {
+    flex: 0 0 100%;
+    width: 100%;
+
+    margin-top: 0.75rem;
+}
+
+
+.fila-segmentador-tamano .segmentador-tamano {
+    box-sizing: border-box;
+
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+
+    margin: 0;
+
+    padding:
+        0.65rem
+        0.85rem
+        0.70rem;
+
+    border:
+        1px solid
+        var(
+            --rebiun-borde-suave,
+            #d9e3e2
+        );
+
+    border-radius: 5px;
+
+    background-color: #fbfcfc;
+}
+
+
+/* El t?tulo mantiene la misma jerarqu?a que el resto
+   de los segmentadores, sin darle un protagonismo extra. */
+
+.fila-segmentador-tamano .segmentador-tamano legend {
+    padding:
+        0
+        0.30rem;
+
+    color:
+        var(
+            --rebiun-texto,
+            #333333
+        );
+
+    font-weight: 600;
+}
+
+
+/* Primera fila: los tres grupos.
+   Segunda fila: Sin dato y Todas. */
+
+.fila-segmentador-tamano .opciones-tamano {
+    display: grid;
+
+    grid-template-columns:
+        max-content
+        max-content
+        max-content;
+
+    gap:
+        0.42rem
+        1.35rem;
+
+    justify-content: start;
+    align-items: center;
+}
+
+
+.fila-segmentador-tamano .opcion-tamano {
+    display: flex;
+    align-items: center;
+
+    gap: 0.38rem;
+
+    margin: 0;
+
+    line-height: 1.25;
+}
+
+
+.fila-segmentador-tamano
+.opcion-tamano
+input[type="radio"] {
+    margin: 0;
+}
+
+
+/* En pantallas estrechas se apilan para evitar desbordamientos. */
+
+@media (max-width: 850px) {
+
+    .fila-segmentador-tamano
+    .opciones-tamano {
+
+        grid-template-columns: 1fr;
+        gap: 0.35rem;
+    }
+
+    .fila-segmentador-tamano
+    .segmentador-tamano {
+
+        width: 100%;
+    }
 }
 

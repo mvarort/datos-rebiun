@@ -1,4 +1,4 @@
-# Selector de estadísticas REBIUN
+# REBIUN Data Explorer
 
 **Aplicación pública:**  
 https://mvarort.github.io/datos-rebiun/
