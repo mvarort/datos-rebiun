@@ -59,6 +59,12 @@ const indicadorEvolucionSelect =
 const indicadorComparacionSelect =
     document.getElementById("indicador-comparacion");
 
+const ordenComparacionSelect =
+    document.getElementById("orden-comparacion");
+
+const orientacionComparacionSelect =
+    document.getElementById("orientacion-comparacion");
+
 const botonesModoComparacion = [
     ...document.querySelectorAll("[data-modo-comparacion]")
 ];
@@ -1073,7 +1079,7 @@ function cargarBibliotecas() {
 
         label.dataset.busqueda =
             normalizarBusqueda(
-                `${meta.Codigo_Biblioteca_REBIUN} ${meta.Biblioteca}`
+                `${meta.Codigo_Biblioteca_REBIUN} ${meta.Biblioteca} ${meta.Siglas || ""}`
             );
 
         label.dataset.comunidad =
@@ -1109,7 +1115,7 @@ function cargarBibliotecas() {
             etiquetaBiblioteca(
                 meta.Biblioteca,
                 meta.Codigo_Biblioteca_REBIUN
-            );
+            ) + (meta.Siglas ? ` - ${meta.Siglas}` : "");
 
         label.appendChild(input);
         label.appendChild(span);
@@ -2728,6 +2734,9 @@ function prepararVisualizaciones() {
         indicadores
     );
 
+    ordenComparacionSelect.value = "desc";
+    orientacionComparacionSelect.value = "horizontal";
+
     actualizarModoComparacion();
     reconstruirAniosComparacion();
 
@@ -2798,6 +2807,22 @@ function colorBiblioteca(biblioteca) {
     }
 
     return coloresGraficos[hash % coloresGraficos.length];
+}
+
+
+function siglasBiblioteca(codigo) {
+    return mapaBibliotecas.get(codigo)?.Siglas || "";
+}
+
+
+function etiquetaGraficoBiblioteca(codigo, nombre) {
+    return siglasBiblioteca(codigo) || nombre;
+}
+
+
+function tituloGraficoBiblioteca(codigo, nombre) {
+    const siglas = siglasBiblioteca(codigo);
+    return `${nombre}${siglas ? ` (${siglas})` : ""}`;
 }
 
 
@@ -2920,6 +2945,9 @@ function renderizarEvolucion() {
 
     bibliotecas.forEach(biblioteca => {
         const color = colorBiblioteca(biblioteca);
+        const filaBiblioteca = filas.find(fila => fila.Biblioteca === biblioteca);
+        const codigoBiblioteca = filaBiblioteca.Codigo_Biblioteca_REBIUN;
+        const nombreCompleto = mapaBibliotecas.get(codigoBiblioteca)?.Biblioteca || biblioteca;
         const mapa = new Map(
             filas
                 .filter(fila => fila.Biblioteca === biblioteca)
@@ -2962,7 +2990,7 @@ function renderizarEvolucion() {
                 "title"
             );
             titulo.textContent =
-                `${biblioteca} · ${anio}: ${formatearValor(valor)}`;
+                `${tituloGraficoBiblioteca(codigoBiblioteca, nombreCompleto)}\n${anio}\nValor: ${formatearValor(valor)}`;
             circulo.appendChild(titulo);
         });
         dibujarSegmento();
@@ -2971,7 +2999,7 @@ function renderizarEvolucion() {
         item.className = "grafico-leyenda-item";
         item.innerHTML =
             `<span class="grafico-leyenda-color" style="background:${color}"></span>` +
-            `<span>${escaparHTML(biblioteca)}</span>`;
+            `<span>${escaparHTML(etiquetaGraficoBiblioteca(codigoBiblioteca, nombreCompleto))}</span>`;
         leyenda.appendChild(item);
     });
 
@@ -3054,6 +3082,7 @@ function renderizarComparacion() {
         )
         .map(fila => ({
             biblioteca: fila.Biblioteca,
+            codigoBiblioteca: fila.Codigo_Biblioteca_REBIUN,
             valor: obtenerNumeroValor(fila.Valor),
             denominador: normalizado
                 ? indiceUsuariosPropios
@@ -3063,6 +3092,7 @@ function renderizarComparacion() {
         }))
         .map(barra => ({
             biblioteca: barra.biblioteca,
+            codigoBiblioteca: barra.codigoBiblioteca,
             valor: normalizado
                 ? Number.isFinite(barra.valor) &&
                     Number.isFinite(barra.denominador) &&
@@ -3072,7 +3102,28 @@ function renderizarComparacion() {
                 : barra.valor
         }))
         .filter(barra => Number.isFinite(barra.valor))
-        .sort((a, b) => b.valor - a.valor);
+        .map(barra => ({
+            ...barra,
+            etiqueta: etiquetaGraficoBiblioteca(
+                barra.codigoBiblioteca,
+                mapaBibliotecas.get(barra.codigoBiblioteca)?.Biblioteca || barra.biblioteca
+            ),
+            titulo: tituloGraficoBiblioteca(
+                barra.codigoBiblioteca,
+                mapaBibliotecas.get(barra.codigoBiblioteca)?.Biblioteca || barra.biblioteca
+            )
+        }))
+        .sort((a, b) => {
+            if (ordenComparacionSelect.value === "alfabetico") {
+                return a.etiqueta.localeCompare(b.etiqueta, "es", {
+                    sensitivity: "base",
+                    numeric: true
+                });
+            }
+            return ordenComparacionSelect.value === "asc"
+                ? a.valor - b.valor
+                : b.valor - a.valor;
+        });
 
     graficoComparacionElemento.innerHTML = "";
 
@@ -3092,13 +3143,94 @@ function renderizarComparacion() {
         graficoComparacionElemento.appendChild(medida);
     }
 
-    const ancho = 900;
+    const vertical = orientacionComparacionSelect.value === "vertical";
+    const ancho = vertical ? Math.max(900, barras.length * 90 + 100) : 900;
     const altoFila = 28;
-    const margen = { superior: 18, derecha: 105, inferior: 25, izquierda: 260 };
-    const alto = margen.superior + margen.inferior + barras.length * altoFila;
+    const espacioEtiquetas = Math.max(
+        145,
+        Math.min(300, Math.max(...barras.map(barra => barra.etiqueta.length)) * 5 + 20)
+    );
+    const margen = vertical
+        ? { superior: 35, derecha: 35, inferior: espacioEtiquetas, izquierda: 75 }
+        : { superior: 18, derecha: 105, inferior: 25, izquierda: 260 };
+    const alto = vertical
+        ? 375 + margen.inferior
+        : margen.superior + margen.inferior + barras.length * altoFila;
     const anchoUtil = ancho - margen.izquierda - margen.derecha;
+    const altoUtil = alto - margen.superior - margen.inferior;
     const maximo = Math.max(...barras.map(barra => barra.valor), 0) || 1;
     const svg = crearSVG(ancho, alto, "Gráfico de comparación entre bibliotecas");
+
+    if (vertical) {
+        svg.style.width = `${ancho}px`;
+        const paso = anchoUtil / barras.length;
+        const anchoBarra = Math.min(48, paso * 0.68);
+        const rotarEtiquetas = barras.some(barra => barra.etiqueta.length > 12);
+
+        for (let indice = 0; indice <= 4; indice += 1) {
+            const valor = maximo * indice / 4;
+            const posicionY = margen.superior + altoUtil - valor * altoUtil / maximo;
+            agregarElementoSVG(svg, "line", {
+                x1: margen.izquierda,
+                y1: posicionY,
+                x2: ancho - margen.derecha,
+                y2: posicionY,
+                class: "grafico-guia"
+            });
+            agregarElementoSVG(svg, "text", {
+                x: margen.izquierda - 7,
+                y: posicionY + 4,
+                "text-anchor": "end",
+                class: "grafico-texto"
+            }, normalizado ? formatoRatio.format(valor) : formatearValor(valor));
+        }
+        agregarElementoSVG(svg, "line", {
+            x1: margen.izquierda,
+            y1: margen.superior,
+            x2: margen.izquierda,
+            y2: alto - margen.inferior,
+            class: "grafico-eje"
+        });
+
+        barras.forEach((barra, indice) => {
+            const centroX = margen.izquierda + (indice + 0.5) * paso;
+            const alturaBarra = barra.valor * altoUtil / maximo;
+            const posicionY = margen.superior + altoUtil - alturaBarra;
+            const rect = agregarElementoSVG(svg, "rect", {
+                x: centroX - anchoBarra / 2,
+                y: posicionY,
+                width: anchoBarra,
+                height: alturaBarra,
+                fill: "#338C87"
+            });
+            const titulo = document.createElementNS(
+                "http://www.w3.org/2000/svg", "title"
+            );
+            titulo.textContent =
+                `${barra.titulo}\n${anio}\nValor: ${normalizado
+                    ? formatoRatio.format(barra.valor)
+                    : formatearValor(barra.valor)}`;
+            rect.appendChild(titulo);
+            agregarElementoSVG(svg, "text", {
+                x: centroX,
+                y: Math.max(22, posicionY - 7),
+                "text-anchor": "middle",
+                class: "grafico-texto"
+            }, normalizado ? formatoRatio.format(barra.valor) : formatearValor(barra.valor));
+            const etiqueta = agregarElementoSVG(svg, "text", {
+                x: centroX,
+                y: alto - margen.inferior + 18,
+                "text-anchor": rotarEtiquetas ? "end" : "middle",
+                class: "grafico-texto grafico-etiqueta-barra"
+            }, barra.etiqueta);
+            if (rotarEtiquetas) {
+                etiqueta.setAttribute(
+                    "transform",
+                    `rotate(-40 ${centroX} ${alto - margen.inferior + 18})`
+                );
+            }
+        });
+    } else {
 
     barras.forEach((barra, indice) => {
         const posicionY = margen.superior + indice * altoFila;
@@ -3109,14 +3241,22 @@ function renderizarComparacion() {
             y: posicionY + 17,
             "text-anchor": "end",
             class: "grafico-texto grafico-etiqueta-barra"
-        }, barra.biblioteca);
-        agregarElementoSVG(svg, "rect", {
+        }, barra.etiqueta);
+        const rect = agregarElementoSVG(svg, "rect", {
             x: margen.izquierda,
             y: posicionY + 3,
             width: Math.max(0, anchoBarra),
             height: 18,
             fill: "#338C87"
         });
+        const titulo = document.createElementNS(
+            "http://www.w3.org/2000/svg", "title"
+        );
+        titulo.textContent =
+            `${barra.titulo}\n${anio}\nValor: ${normalizado
+                ? formatoRatio.format(barra.valor)
+                : formatearValor(barra.valor)}`;
+        rect.appendChild(titulo);
         agregarElementoSVG(svg, "text", {
             x: margen.izquierda + anchoBarra + 7,
             y: posicionY + 17,
@@ -3125,31 +3265,37 @@ function renderizarComparacion() {
             ? formatoRatio.format(barra.valor)
             : formatearValor(barra.valor));
     });
+    }
 
     const promedio = calcularPromedioFilas(
         barras.map(barra => ({ Valor: barra.valor }))
     );
 
     if (Number.isFinite(promedio.valor)) {
-        const posicionPromedio =
-            margen.izquierda + promedio.valor * anchoUtil / maximo;
+        const posicionPromedio = vertical
+            ? margen.superior + altoUtil - promedio.valor * altoUtil / maximo
+            : margen.izquierda + promedio.valor * anchoUtil / maximo;
         const etiquetaALaDerecha =
             posicionPromedio < ancho - margen.derecha - 250;
 
         agregarElementoSVG(svg, "line", {
-            x1: posicionPromedio,
-            y1: margen.superior,
-            x2: posicionPromedio,
-            y2: alto - margen.inferior,
+            x1: vertical ? margen.izquierda : posicionPromedio,
+            y1: vertical ? posicionPromedio : margen.superior,
+            x2: vertical ? ancho - margen.derecha : posicionPromedio,
+            y2: vertical ? posicionPromedio : alto - margen.inferior,
             stroke: colorPromedio,
             "stroke-width": 1.5,
             "stroke-dasharray": "4 4",
             opacity: 0.75
         });
         agregarElementoSVG(svg, "text", {
-            x: posicionPromedio + (etiquetaALaDerecha ? 6 : -6),
-            y: 12,
-            "text-anchor": etiquetaALaDerecha ? "start" : "end",
+            x: vertical
+                ? margen.izquierda + 6
+                : posicionPromedio + (etiquetaALaDerecha ? 6 : -6),
+            y: vertical ? Math.max(18, posicionPromedio - 6) : 12,
+            "text-anchor": vertical
+                ? "start"
+                : etiquetaALaDerecha ? "start" : "end",
             class: "grafico-texto grafico-etiqueta-promedio",
             fill: colorPromedio
         }, `Promedio de bibliotecas seleccionadas: ${normalizado
@@ -3506,6 +3652,16 @@ indicadorComparacionSelect.addEventListener(
         reconstruirAniosComparacion();
         renderizarComparacion();
     }
+);
+
+ordenComparacionSelect.addEventListener(
+    "change",
+    renderizarComparacion
+);
+
+orientacionComparacionSelect.addEventListener(
+    "change",
+    renderizarComparacion
 );
 
 botonesModoComparacion.forEach(boton => {

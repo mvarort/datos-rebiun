@@ -1,79 +1,79 @@
-﻿Codigo_Biblioteca_REBIUN;Biblioteca;Comunidad_Autonoma;Modalidad;Titularidad
-01;Universitat Abat Oliba CEU;Cataluña;Presencial;Privada
-02;Universidad de Alcalá;Comunidad de Madrid;Presencial;Pública
-03;Universidad Alfonso X el Sabio;Comunidad de Madrid;Presencial;Privada
-04;Universidad de Alicante;Comunitat Valenciana;Presencial;Pública
-05;Universidad de Almería;Andalucía;Presencial;Pública
-06;Universidad Antonio de Nebrija;Comunidad de Madrid;Presencial;Privada
-07;Universitat Autònoma de Barcelona;Cataluña;Presencial;Pública
-08;Universidad Autónoma de Madrid;Comunidad de Madrid;Presencial;Pública
-09;Universitat de Barcelona;Cataluña;Presencial;Pública
-10;Universidad de Burgos;Castilla y León;Presencial;Pública
-11;Universidad de Cádiz;Andalucía;Presencial;Pública
-12;Universidad Camilo José Cela;Comunidad de Madrid;Presencial;Privada
-13;Universidad de Cantabria;Cantabria;Presencial;Pública
-14;Universidad CEU Cardenal Herrera;Comunitat Valenciana;Presencial;Privada
-15;Universidad Carlos III de Madrid;Comunidad de Madrid;Presencial;Pública
-16;Universidad de Castilla La Mancha;Castilla-La Mancha;Presencial;Pública
-17;Universitat Catòlica de València Sant Vicent Màrtir;Comunitat Valenciana;Presencial;Privada
-18;Universidad Católica San Antonio de Murcia;Región de Murcia;Presencial;Privada
-19;Universidad Complutense de Madrid;Comunidad de Madrid;Presencial;Pública
-20;Consejo Superior de Investigaciones Científicas;Comunidad de Madrid;Especial;Pública
-21;Universidad de Córdoba;Andalucía;Presencial;Pública
-22;Universidade da Coruña;Galicia;Presencial;Pública
-23;Universidad de Deusto;País Vasco;Presencial;Privada
-24;Universidad Europea de Madrid;Comunidad de Madrid;Presencial;Privada
-25;Universidad Europea Miguel de Cervantes;Castilla y León;Presencial;Privada
-26;Universidad de Extremadura;Extremadura;Presencial;Pública
-27;Universidad Francisco de Vitoria;Comunidad de Madrid;Presencial;Privada
-28;Universitat de Girona;Cataluña;Presencial;Pública
-29;Universidad de Granada;Andalucía;Presencial;Pública
-30;Universidad de Huelva;Andalucía;Presencial;Pública
-31;IE Universidad;Comunidad de Madrid;Presencial;Privada
-32;Universitat de les Illes Balears;Illes Balears;Presencial;Pública
-33;Universidad Internacional de Andalucía;Andalucía;Especial;Pública
-34;Universitat Internacional de Catalunya;Cataluña;Presencial;Privada
-35;Universidad Internacional de la Rioja;La Rioja;No Presencial;Privada
-36;Universidad de Jaén;Andalucía;Presencial;Pública
-37;Universitat Jaume I;Comunitat Valenciana;Presencial;Pública
-38;Universidad de La Laguna;Canarias;Presencial;Pública
-39;Universidad de La Rioja;La Rioja;Presencial;Pública
-40;Universidad de León;Castilla y León;Presencial;Pública
-41;Universitat de Lleida;Cataluña;Presencial;Pública
-42;Universidad de Málaga;Andalucía;Presencial;Pública
-43;Universidad Miguel Hernández de Elche;Comunitat Valenciana;Presencial;Pública
-44;Mondragon Unibertsitatea;País Vasco;Presencial;Privada
-45;Universidad de Murcia;Región de Murcia;Presencial;Pública
-46;Universidad de Navarra;Comunidad Foral de Navarra;Presencial;Privada
-47;Universitat Oberta de Catalunya;Cataluña;No Presencial;Privada
-48;Universidad de Oviedo;Principado de Asturias;Presencial;Pública
-49;Universidad Pablo de Olavide;Andalucía;Presencial;Pública
-50;Euskal Herriko Unibertsitatea;País Vasco;Presencial;Pública
-51;Universidad de Las Palmas de Gran Canaria;Canarias;Presencial;Pública
-52;Universidad Politécnica de Cartagena;Región de Murcia;Presencial;Pública
-53;Universitat Politècnica de Catalunya;Cataluña;Presencial;Pública
-54;Universidad Politécnica de Madrid;Comunidad de Madrid;Presencial;Pública
-55;Universitat Politècnica de València;Comunitat Valenciana;Presencial;Pública
-56;Universitat Pompeu Fabra;Cataluña;Presencial;Pública
-57;Universidad Pontificia Comillas;Comunidad de Madrid;Presencial;Privada
-58;Universidad Pontificia de Salamanca;Castilla y León;Presencial;Privada
-59;Universidad Pública de Navarra;Comunidad Foral de Navarra;Presencial;Pública
-60;Universitat Ramon Llull;Cataluña;Presencial;Privada
-61;Universidad Rey Juan Carlos;Comunidad de Madrid;Presencial;Pública
-62;Universitat Rovira i Virgili;Cataluña;Presencial;Pública
-63;Universidad de Salamanca;Castilla y León;Presencial;Pública
-64;Universidad San Jorge;Aragón;Presencial;Privada
-65;Universidad CEU San Pablo;Comunidad de Madrid;Presencial;Privada
-66;Universidade de Santiago de Compostela;Galicia;Presencial;Pública
-67;Universidad de Sevilla;Andalucía;Presencial;Pública
-68;Universidad a Distancia de Madrid;Comunidad de Madrid;No Presencial;Privada
-69;Universidad Nacional de Educación a Distancia;Comunidad de Madrid;No Presencial;Pública
-70;Universitat de València;Comunitat Valenciana;Presencial;Pública
-71;Universidad de Valladolid;Castilla y León;Presencial;Pública
-72;Universitat de Vic;Cataluña;Presencial;Privada
-73;Universidade de Vigo;Galicia;Presencial;Pública
-74;Universidad de Zaragoza;Aragón;Presencial;Pública
-75;Universidad Loyola Andalucía;Andalucía;Presencial;Privada
-76;Universidad Católica de Ávila;Castilla y León;Presencial;Privada
-77;Universidad Internacional de Valencia;Comunitat Valenciana;No Presencial;Privada
-78;Universidad Europea de Valencia;Comunitat Valenciana;Presencial;Privada
+﻿Codigo_Biblioteca_REBIUN;Biblioteca;Comunidad_Autonoma;Modalidad;Titularidad;Siglas
+01;Universitat Abat Oliba CEU;Cataluña;Presencial;Privada;UAO
+02;Universidad de Alcalá;Comunidad de Madrid;Presencial;Pública;UAH
+03;Universidad Alfonso X el Sabio;Comunidad de Madrid;Presencial;Privada;UAX
+04;Universidad de Alicante;Comunitat Valenciana;Presencial;Pública;UA
+05;Universidad de Almería;Andalucía;Presencial;Pública;UAL
+06;Universidad Antonio de Nebrija;Comunidad de Madrid;Presencial;Privada;UANE
+07;Universitat Autònoma de Barcelona;Cataluña;Presencial;Pública;UAB
+08;Universidad Autónoma de Madrid;Comunidad de Madrid;Presencial;Pública;UAM
+09;Universitat de Barcelona;Cataluña;Presencial;Pública;UBA
+10;Universidad de Burgos;Castilla y León;Presencial;Pública;UBU
+11;Universidad de Cádiz;Andalucía;Presencial;Pública;UCA
+12;Universidad Camilo José Cela;Comunidad de Madrid;Presencial;Privada;UCJC
+13;Universidad de Cantabria;Cantabria;Presencial;Pública;UCN
+14;Universidad CEU Cardenal Herrera;Comunitat Valenciana;Presencial;Privada;UCH
+15;Universidad Carlos III de Madrid;Comunidad de Madrid;Presencial;Pública;UCAR
+16;Universidad de Castilla La Mancha;Castilla-La Mancha;Presencial;Pública;UCLM
+17;Universitat Catòlica de València Sant Vicent Màrtir;Comunitat Valenciana;Presencial;Privada;UCV
+18;Universidad Católica San Antonio de Murcia;Región de Murcia;Presencial;Privada;UCAM
+19;Universidad Complutense de Madrid;Comunidad de Madrid;Presencial;Pública;UCM
+20;Consejo Superior de Investigaciones Científicas;Comunidad de Madrid;Especial;Pública;
+21;Universidad de Córdoba;Andalucía;Presencial;Pública;UCO
+22;Universidade da Coruña;Galicia;Presencial;Pública;UDC
+23;Universidad de Deusto;País Vasco;Presencial;Privada;UDE
+24;Universidad Europea de Madrid;Comunidad de Madrid;Presencial;Privada;UEM
+25;Universidad Europea Miguel de Cervantes;Castilla y León;Presencial;Privada;UEMC
+26;Universidad de Extremadura;Extremadura;Presencial;Pública;UEX
+27;Universidad Francisco de Vitoria;Comunidad de Madrid;Presencial;Privada;UFV
+28;Universitat de Girona;Cataluña;Presencial;Pública;UDG
+29;Universidad de Granada;Andalucía;Presencial;Pública;UGR
+30;Universidad de Huelva;Andalucía;Presencial;Pública;UHU
+31;IE Universidad;Comunidad de Madrid;Presencial;Privada;IE
+32;Universitat de les Illes Balears;Illes Balears;Presencial;Pública;UIB
+33;Universidad Internacional de Andalucía;Andalucía;Especial;Pública;UNIA
+34;Universitat Internacional de Catalunya;Cataluña;Presencial;Privada;UIC
+35;Universidad Internacional de la Rioja;La Rioja;No Presencial;Privada;UNIR
+36;Universidad de Jaén;Andalucía;Presencial;Pública;UJA
+37;Universitat Jaume I;Comunitat Valenciana;Presencial;Pública;UJI
+38;Universidad de La Laguna;Canarias;Presencial;Pública;ULL
+39;Universidad de La Rioja;La Rioja;Presencial;Pública;UR
+40;Universidad de León;Castilla y León;Presencial;Pública;ULE
+41;Universitat de Lleida;Cataluña;Presencial;Pública;UDL
+42;Universidad de Málaga;Andalucía;Presencial;Pública;UMA
+43;Universidad Miguel Hernández de Elche;Comunitat Valenciana;Presencial;Pública;UMH
+44;Mondragon Unibertsitatea;País Vasco;Presencial;Privada;UMON
+45;Universidad de Murcia;Región de Murcia;Presencial;Pública;UMU
+46;Universidad de Navarra;Comunidad Foral de Navarra;Presencial;Privada;UN
+47;Universitat Oberta de Catalunya;Cataluña;No Presencial;Privada;UOC
+48;Universidad de Oviedo;Principado de Asturias;Presencial;Pública;UOV
+49;Universidad Pablo de Olavide;Andalucía;Presencial;Pública;UPO
+50;Euskal Herriko Unibertsitatea;País Vasco;Presencial;Pública;UPV / EHU
+51;Universidad de Las Palmas de Gran Canaria;Canarias;Presencial;Pública;UPGC
+52;Universidad Politécnica de Cartagena;Región de Murcia;Presencial;Pública;UPCT
+53;Universitat Politècnica de Catalunya;Cataluña;Presencial;Pública;UPC
+54;Universidad Politécnica de Madrid;Comunidad de Madrid;Presencial;Pública;UPM
+55;Universitat Politècnica de València;Comunitat Valenciana;Presencial;Pública;UPV
+56;Universitat Pompeu Fabra;Cataluña;Presencial;Pública;UPF
+57;Universidad Pontificia Comillas;Comunidad de Madrid;Presencial;Privada;COMILLAS
+58;Universidad Pontificia de Salamanca;Castilla y León;Presencial;Privada;UPSA
+59;Universidad Pública de Navarra;Comunidad Foral de Navarra;Presencial;Pública;UPNA
+60;Universitat Ramon Llull;Cataluña;Presencial;Privada;URLL
+61;Universidad Rey Juan Carlos;Comunidad de Madrid;Presencial;Pública;URJC
+62;Universitat Rovira i Virgili;Cataluña;Presencial;Pública;URV
+63;Universidad de Salamanca;Castilla y León;Presencial;Pública;USAL
+64;Universidad San Jorge;Aragón;Presencial;Privada;USJ
+65;Universidad CEU San Pablo;Comunidad de Madrid;Presencial;Privada;UCEU
+66;Universidade de Santiago de Compostela;Galicia;Presencial;Pública;USC
+67;Universidad de Sevilla;Andalucía;Presencial;Pública;USE
+68;Universidad a Distancia de Madrid;Comunidad de Madrid;No Presencial;Privada;UDIMA
+69;Universidad Nacional de Educación a Distancia;Comunidad de Madrid;No Presencial;Pública;UNED
+70;Universitat de València;Comunitat Valenciana;Presencial;Pública;UV
+71;Universidad de Valladolid;Castilla y León;Presencial;Pública;UVA
+72;Universitat de Vic;Cataluña;Presencial;Privada;UVIC
+73;Universidade de Vigo;Galicia;Presencial;Pública;UVI
+74;Universidad de Zaragoza;Aragón;Presencial;Pública;UZA
+75;Universidad Loyola Andalucía;Andalucía;Presencial;Privada;ULA
+76;Universidad Católica de Ávila;Castilla y León;Presencial;Privada;UCAV
+77;Universidad Internacional de Valencia;Comunitat Valenciana;No Presencial;Privada;VIU
+78;Universidad Europea de Valencia;Comunitat Valenciana;Presencial;Privada;UEV
