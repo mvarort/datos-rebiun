@@ -59,6 +59,12 @@ const indicadorEvolucionSelect =
 const indicadorComparacionSelect =
     document.getElementById("indicador-comparacion");
 
+const botonesModoComparacion = [
+    ...document.querySelectorAll("[data-modo-comparacion]")
+];
+
+let modoComparacion = "absoluto";
+
 const mostrarPromedioEvolucion =
     document.getElementById("mostrar-promedio-evolucion");
 
@@ -2722,6 +2728,7 @@ function prepararVisualizaciones() {
         indicadores
     );
 
+    actualizarModoComparacion();
     reconstruirAniosComparacion();
 
     selectorVistas.hidden = false;
@@ -2759,6 +2766,25 @@ function reconstruirAniosComparacion() {
             renderizarComparacion();
         });
         aniosComparacionElemento.appendChild(boton);
+    });
+}
+
+
+function actualizarModoComparacion() {
+
+    const indicadorPropio =
+        indicadorComparacionSelect.value === "NUSUARIOPROP";
+
+    if (indicadorPropio) {
+        modoComparacion = "absoluto";
+    }
+
+    botonesModoComparacion.forEach(boton => {
+        const activo = boton.dataset.modoComparacion === modoComparacion;
+        boton.disabled = indicadorPropio &&
+            boton.dataset.modoComparacion === "por-usuario";
+        boton.classList.toggle("activo", activo);
+        boton.setAttribute("aria-pressed", activo ? "true" : "false");
     });
 }
 
@@ -3017,6 +3043,10 @@ function renderizarComparacion() {
 
     const codigo = indicadorComparacionSelect.value;
     const anio = anioComparacionActivo;
+    const normalizado = modoComparacion === "por-usuario";
+    const formatoRatio = new Intl.NumberFormat("es-ES", {
+        maximumFractionDigits: 3
+    });
     const barras = datosActuales
         .filter(fila =>
             fila.Codigo_Tecnico === codigo &&
@@ -3024,7 +3054,22 @@ function renderizarComparacion() {
         )
         .map(fila => ({
             biblioteca: fila.Biblioteca,
-            valor: obtenerNumeroValor(fila.Valor)
+            valor: obtenerNumeroValor(fila.Valor),
+            denominador: normalizado
+                ? indiceUsuariosPropios
+                    .get(fila.Codigo_Biblioteca_REBIUN)
+                    ?.get(fila.Anio)
+                : null
+        }))
+        .map(barra => ({
+            biblioteca: barra.biblioteca,
+            valor: normalizado
+                ? Number.isFinite(barra.valor) &&
+                    Number.isFinite(barra.denominador) &&
+                    barra.denominador > 0
+                    ? barra.valor / barra.denominador
+                    : null
+                : barra.valor
         }))
         .filter(barra => Number.isFinite(barra.valor))
         .sort((a, b) => b.valor - a.valor);
@@ -3033,8 +3078,18 @@ function renderizarComparacion() {
 
     if (!codigo || !anio || !barras.length) {
         graficoComparacionElemento.innerHTML =
-            '<div class="mensaje">No existen datos numéricos para esta combinación de indicador y año.</div>';
+            normalizado
+                ? '<div class="mensaje">No hay datos de personas usuarias propias disponibles para normalizar esta comparación.</div>'
+                : '<div class="mensaje">No existen datos numéricos para esta combinación de indicador y año.</div>';
         return;
+    }
+
+    if (normalizado) {
+        const medida = document.createElement("p");
+        medida.className = "medida-comparacion";
+        medida.textContent =
+            `${indicadorComparacionSelect.selectedOptions[0]?.textContent || "Indicador"} por persona usuaria propia`;
+        graficoComparacionElemento.appendChild(medida);
     }
 
     const ancho = 900;
@@ -3066,7 +3121,9 @@ function renderizarComparacion() {
             x: margen.izquierda + anchoBarra + 7,
             y: posicionY + 17,
             class: "grafico-texto"
-        }, formatearValor(barra.valor));
+        }, normalizado
+            ? formatoRatio.format(barra.valor)
+            : formatearValor(barra.valor));
     });
 
     const promedio = calcularPromedioFilas(
@@ -3095,7 +3152,9 @@ function renderizarComparacion() {
             "text-anchor": etiquetaALaDerecha ? "start" : "end",
             class: "grafico-texto grafico-etiqueta-promedio",
             fill: colorPromedio
-        }, `Promedio de bibliotecas seleccionadas: ${formatearValor(promedio.valor)}`);
+        }, `Promedio de bibliotecas seleccionadas: ${normalizado
+            ? formatoRatio.format(promedio.valor)
+            : formatearValor(promedio.valor)}`);
     }
 
     graficoComparacionElemento.appendChild(svg);
@@ -3213,6 +3272,19 @@ function svgExportable(tipoVista) {
         alto = inicioLeyenda + items.length * 20 + 8;
     }
 
+    if (tipoVista === "comparacion" && modoComparacion === "por-usuario") {
+        const medida = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
+        medida.setAttribute("x", "16");
+        medida.setAttribute("y", String(alto + 19));
+        medida.setAttribute("class", "grafico-texto");
+        medida.textContent = "Por persona usuaria propia";
+        clon.appendChild(medida);
+        alto += 30;
+    }
+
     clon.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
     clon.setAttribute("width", String(ancho));
     clon.setAttribute("height", String(alto));
@@ -3242,6 +3314,10 @@ function nombreArchivoGrafico(tipoVista, extension) {
 
     if (tipoVista === "comparacion") {
         partes.push(anioComparacionActivo);
+        if (modoComparacion === "por-usuario") {
+            partes.push("por_usuario");
+        }
+        return `${partes.join("_")}.${extension}`;
     }
 
     partes.push(fecha);
@@ -3323,7 +3399,10 @@ function prepararImpresionGrafico(tipoVista) {
     metadatos.className = "metadatos-impresion";
     metadatos.textContent =
         `Indicador: ${selectorIndicador.selectedOptions[0]?.textContent || ""}` +
-        (esEvolucion ? "" : ` · Año: ${anioComparacionActivo}`);
+        (esEvolucion ? "" : ` · Año: ${anioComparacionActivo}`) +
+        (!esEvolucion && modoComparacion === "por-usuario"
+            ? " · Por persona usuaria propia"
+            : "");
     vistaImpresionGrafico.appendChild(metadatos);
 
     vistaImpresionGrafico.appendChild(contenedor.cloneNode(true));
@@ -3423,10 +3502,22 @@ mostrarPromedioEvolucion.addEventListener(
 indicadorComparacionSelect.addEventListener(
     "change",
     () => {
+        actualizarModoComparacion();
         reconstruirAniosComparacion();
         renderizarComparacion();
     }
 );
+
+botonesModoComparacion.forEach(boton => {
+    boton.addEventListener("click", () => {
+        if (boton.disabled) {
+            return;
+        }
+        modoComparacion = boton.dataset.modoComparacion;
+        actualizarModoComparacion();
+        renderizarComparacion();
+    });
+});
 
 
 

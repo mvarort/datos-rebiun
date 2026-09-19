@@ -373,6 +373,40 @@ button.mini {
     border: 0;
 }
 
+#comparacion .controles-grafico > .campo,
+.selector-modo-comparacion {
+    flex-basis: 100%;
+}
+
+.selector-modo-comparacion {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.selector-modo-comparacion legend {
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.selector-modo-comparacion .chip-anio:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.ayuda-normalizacion {
+    align-self: center;
+    color: #687575;
+    cursor: help;
+}
+
+.medida-comparacion {
+    margin: 0 0 0.5rem;
+    color: #586564;
+    font-size: 0.85rem;
+}
+
 .selector-anios-comparacion legend {
     margin-bottom: 6px;
     padding: 0;

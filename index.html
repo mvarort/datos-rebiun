@@ -558,6 +558,15 @@
                     <select id="indicador-comparacion"></select>
                 </div>
 
+                <fieldset class="selector-modo-comparacion">
+                    <legend>Modo de comparación</legend>
+                    <div class="chips-anios" role="group" aria-label="Modo de comparación">
+                        <button type="button" class="chip-anio activo" data-modo-comparacion="absoluto" aria-pressed="true">Valores absolutos</button>
+                        <button type="button" class="chip-anio" data-modo-comparacion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
+                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado." title="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado.">ⓘ</span>
+                    </div>
+                </fieldset>
+
                 <fieldset class="selector-anios-comparacion">
                     <legend>Año</legend>
                     <div
