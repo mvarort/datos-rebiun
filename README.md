@@ -40,3 +40,7 @@ El código oficial REBIUN se muestra delante del nombre de cada institución, po
 
 ```text
 [67] Universidad de Sevilla
+
+## Fuente de las siglas institucionales
+
+Las siglas de las universidades proceden del Registro de Universidades, Centros y Títulos (RUCT). Como única excepción, el Consejo Superior de Investigaciones Científicas se identifica mediante la sigla **CSIC**, que no procede del RUCT al no tratarse de una universidad.
