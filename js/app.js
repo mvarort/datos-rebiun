@@ -41,6 +41,22 @@ const botonDescargar =
 const resumenElemento =
     document.getElementById("resumen");
 
+const fechaActualizacionElemento =
+    document.getElementById("fecha-actualizacion");
+
+// La aplicación no publica una fecha de datos: usamos la del documento.
+const fechaDocumento = new Date(document.lastModified);
+const fechaActualizacion = Number.isNaN(fechaDocumento.getTime())
+    ? new Date()
+    : fechaDocumento;
+fechaActualizacionElemento.textContent =
+    new Intl.DateTimeFormat("es-ES", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+    }).format(fechaActualizacion);
+fechaActualizacionElemento.dateTime = fechaActualizacion.toISOString();
+
 const tablaElemento =
     document.getElementById("tabla");
 
@@ -1110,12 +1126,19 @@ function cargarBibliotecas() {
         const span =
             document.createElement("span");
 
-        // El usuario sigue viendo el nombre de la institución.
-        span.textContent =
-            etiquetaBiblioteca(
-                meta.Biblioteca,
-                meta.Codigo_Biblioteca_REBIUN
-            ) + (meta.Siglas ? ` - ${meta.Siglas}` : "");
+        span.className = "texto-biblioteca";
+        const codigo = document.createElement("span");
+        codigo.className = "codigo-biblioteca";
+        codigo.textContent = `[${meta.Codigo_Biblioteca_REBIUN}]`;
+        const nombre = document.createElement("span");
+        nombre.textContent = meta.Biblioteca;
+        span.append(codigo, " ", nombre);
+        if (meta.Siglas) {
+            const sigla = document.createElement("span");
+            sigla.className = "sigla-biblioteca";
+            sigla.textContent = ` · ${meta.Siglas}`;
+            span.appendChild(sigla);
+        }
 
         label.appendChild(input);
         label.appendChild(span);
@@ -3201,7 +3224,7 @@ function renderizarComparacion() {
                 y: posicionY,
                 width: anchoBarra,
                 height: alturaBarra,
-                fill: "#338C87"
+                fill: "#7896A8"
             });
             const titulo = document.createElementNS(
                 "http://www.w3.org/2000/svg", "title"
@@ -3247,7 +3270,7 @@ function renderizarComparacion() {
             y: posicionY + 3,
             width: Math.max(0, anchoBarra),
             height: 18,
-            fill: "#338C87"
+            fill: "#7896A8"
         });
         const titulo = document.createElementNS(
             "http://www.w3.org/2000/svg", "title"

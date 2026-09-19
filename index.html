@@ -17,11 +17,8 @@
         <p class="subtitulo-aplicacion">
             Consulta y visualización de estadísticas REBIUN
         </p>
+        <p class="metadatos-aplicacion">Datos 2020–2025 · 78 instituciones</p>
     </header>
-
-    <p class="intro">
-        Seleccione las bibliotecas, indicadores y años que desea consultar.
-    </p>
 
 
         <!-- ==================================================
@@ -32,7 +29,13 @@
 
         <section class="panel panel-bloque panel-bibliotecas">
 
-            <h2>1. Bibliotecas</h2>
+            <div class="encabezado-seccion">
+                <span class="numero-seccion" aria-hidden="true">01</span>
+                <div>
+                    <h2>Bibliotecas</h2>
+                    <p>Seleccione las instituciones que desea analizar.</p>
+                </div>
+            </div>
 
             <div class="segmentadores">
 
@@ -150,7 +153,7 @@
                     type="search"
                     id="buscar-biblioteca"
                     class="buscador"
-                    placeholder="Buscar biblioteca...">
+                    placeholder="Buscar por universidad, código o sigla...">
 
 
                 <div
@@ -171,7 +174,13 @@
 
         <section class="panel panel-bloque panel-anios">
 
-            <h2>2. Años</h2>
+            <div class="encabezado-seccion">
+                <span class="numero-seccion" aria-hidden="true">02</span>
+                <div>
+                    <h2>Años</h2>
+                    <p>Acote el periodo de la consulta.</p>
+                </div>
+            </div>
 
             <div class="bloque-lista bloque-anios">
 
@@ -222,8 +231,13 @@
          ================================================== -->
 
     <section class="panel panel-bloque">
-
-        <h2>3. Indicadores</h2>
+        <div class="encabezado-seccion">
+            <span class="numero-seccion" aria-hidden="true">03</span>
+            <div>
+                <h2>Indicadores</h2>
+                <p>Elija las estadísticas que desea explorar.</p>
+            </div>
+        </div>
 
 
         <div class="segmentadores">
@@ -365,9 +379,14 @@
          ORGANIZACIÓN
          ================================================== -->
 
-    <section class="panel panel-bloque">
-
-        <h2>4. Organización del resultado</h2>
+    <section class="panel panel-bloque panel-organizacion">
+        <div class="encabezado-seccion">
+            <span class="numero-seccion" aria-hidden="true">04</span>
+            <div>
+                <h2>Organización del resultado</h2>
+                <p>Defina la disposición de la tabla y genere la consulta.</p>
+            </div>
+        </div>
 
         <div class="organizacion">
 
@@ -444,7 +463,7 @@
          RESULTADOS
          ================================================== -->
 
-    <section>
+    <section class="seccion-resultados">
 
         <div id="resumen"></div>
 
@@ -551,6 +570,22 @@
             hidden>
 
             <div class="controles-grafico">
+                <div class="campo">
+                    <label for="indicador-comparacion">
+                        Indicador
+                    </label>
+                    <select id="indicador-comparacion"></select>
+                </div>
+
+                <fieldset class="selector-modo-comparacion">
+                    <legend>Modo de comparación</legend>
+                    <div class="chips-anios" role="group" aria-label="Modo de comparación">
+                        <button type="button" class="chip-anio activo" data-modo-comparacion="absoluto" aria-pressed="true">Valores absolutos</button>
+                        <button type="button" class="chip-anio" data-modo-comparacion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
+                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado." title="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado.">ⓘ</span>
+                    </div>
+                </fieldset>
+
                 <div class="controles-disposicion-comparacion">
                     <div class="campo">
                         <label for="orden-comparacion">Ordenar</label>
@@ -568,21 +603,6 @@
                         </select>
                     </div>
                 </div>
-                <div class="campo">
-                    <label for="indicador-comparacion">
-                        Indicador
-                    </label>
-                    <select id="indicador-comparacion"></select>
-                </div>
-
-                <fieldset class="selector-modo-comparacion">
-                    <legend>Modo de comparación</legend>
-                    <div class="chips-anios" role="group" aria-label="Modo de comparación">
-                        <button type="button" class="chip-anio activo" data-modo-comparacion="absoluto" aria-pressed="true">Valores absolutos</button>
-                        <button type="button" class="chip-anio" data-modo-comparacion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
-                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado." title="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado.">ⓘ</span>
-                    </div>
-                </fieldset>
 
                 <fieldset class="selector-anios-comparacion">
                     <legend>Año</legend>
@@ -620,6 +640,12 @@
             </div>
 
         </div>
+
+        <footer class="pie-resultados">
+            <div>Autor: Miguel Varo</div>
+            <div>Colabora: Grupo de Estadísticas de REBIUN</div>
+            <div>Fecha de actualización: <time id="fecha-actualizacion"></time></div>
+        </footer>
 
     </section>
 
