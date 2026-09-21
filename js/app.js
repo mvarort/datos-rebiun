@@ -2758,7 +2758,7 @@ function prepararVisualizaciones() {
     );
 
     ordenComparacionSelect.value = "desc";
-    orientacionComparacionSelect.value = "horizontal";
+    orientacionComparacionSelect.value = "vertical";
 
     actualizarModoComparacion();
     reconstruirAniosComparacion();
@@ -2878,6 +2878,33 @@ function agregarElementoSVG(svg, tipo, atributos, texto = null) {
 
     svg.appendChild(elemento);
     return elemento;
+}
+
+
+function calcularEscalaAgradable(maximoReal, divisionesObjetivo = 5) {
+
+    if (!Number.isFinite(maximoReal) || maximoReal <= 0) {
+        return { maximo: 1, paso: 0.2, divisiones: 5 };
+    }
+
+    const pasoBruto = maximoReal / divisionesObjetivo;
+    const potencia = 10 ** Math.floor(Math.log10(pasoBruto));
+    const proporcion = pasoBruto / potencia;
+    const factor = proporcion <= 1
+        ? 1
+        : proporcion <= 2
+            ? 2
+            : proporcion <= 5
+                ? 5
+                : 10;
+    const paso = factor * potencia;
+    const divisiones = Math.ceil(maximoReal / paso);
+
+    return {
+        maximo: divisiones * paso,
+        paso,
+        divisiones
+    };
 }
 
 
@@ -3174,14 +3201,16 @@ function renderizarComparacion() {
         Math.min(300, Math.max(...barras.map(barra => barra.etiqueta.length)) * 5 + 20)
     );
     const margen = vertical
-        ? { superior: 35, derecha: 35, inferior: espacioEtiquetas, izquierda: 75 }
+        ? { superior: 35, derecha: 275, inferior: espacioEtiquetas, izquierda: 75 }
         : { superior: 18, derecha: 105, inferior: 25, izquierda: 260 };
     const alto = vertical
         ? 375 + margen.inferior
         : margen.superior + margen.inferior + barras.length * altoFila;
     const anchoUtil = ancho - margen.izquierda - margen.derecha;
     const altoUtil = alto - margen.superior - margen.inferior;
-    const maximo = Math.max(...barras.map(barra => barra.valor), 0) || 1;
+    const maximoReal = Math.max(...barras.map(barra => barra.valor), 0) || 1;
+    const escalaVertical = calcularEscalaAgradable(maximoReal);
+    const maximo = vertical ? escalaVertical.maximo : maximoReal;
     const svg = crearSVG(ancho, alto, "Gráfico de comparación entre bibliotecas");
 
     if (vertical) {
@@ -3190,8 +3219,8 @@ function renderizarComparacion() {
         const anchoBarra = Math.min(48, paso * 0.68);
         const rotarEtiquetas = barras.some(barra => barra.etiqueta.length > 12);
 
-        for (let indice = 0; indice <= 4; indice += 1) {
-            const valor = maximo * indice / 4;
+        for (let indice = 0; indice <= escalaVertical.divisiones; indice += 1) {
+            const valor = escalaVertical.paso * indice;
             const posicionY = margen.superior + altoUtil - valor * altoUtil / maximo;
             agregarElementoSVG(svg, "line", {
                 x1: margen.izquierda,
@@ -3313,11 +3342,11 @@ function renderizarComparacion() {
         });
         agregarElementoSVG(svg, "text", {
             x: vertical
-                ? margen.izquierda + 6
+                ? ancho - 8
                 : posicionPromedio + (etiquetaALaDerecha ? 6 : -6),
             y: vertical ? Math.max(18, posicionPromedio - 6) : 12,
             "text-anchor": vertical
-                ? "start"
+                ? "end"
                 : etiquetaALaDerecha ? "start" : "end",
             class: "grafico-texto grafico-etiqueta-promedio",
             fill: colorPromedio
@@ -3684,7 +3713,13 @@ ordenComparacionSelect.addEventListener(
 
 orientacionComparacionSelect.addEventListener(
     "change",
-    renderizarComparacion
+    () => {
+        ordenComparacionSelect.value =
+            orientacionComparacionSelect.value === "vertical"
+                ? "desc"
+                : "asc";
+        renderizarComparacion();
+    }
 );
 
 botonesModoComparacion.forEach(boton => {
