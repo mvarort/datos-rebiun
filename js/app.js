@@ -72,6 +72,11 @@ const comparacionElemento =
 const indicadorEvolucionSelect =
     document.getElementById("indicador-evolucion");
 
+const destacarBibliotecaEvolucionSelect =
+    document.getElementById("destacar-biblioteca-evolucion");
+
+let bibliotecaDestacadaEvolucion = "";
+
 const indicadorComparacionSelect =
     document.getElementById("indicador-comparacion");
 
@@ -2757,6 +2762,8 @@ function prepararVisualizaciones() {
         indicadores
     );
 
+    reconstruirBibliotecasEvolucion();
+
     ordenComparacionSelect.value = "desc";
     orientacionComparacionSelect.value = "vertical";
 
@@ -2908,6 +2915,58 @@ function calcularEscalaAgradable(maximoReal, divisionesObjetivo = 5) {
 }
 
 
+function reconstruirBibliotecasEvolucion() {
+
+    const codigoIndicador = indicadorEvolucionSelect.value;
+    const bibliotecas = new Map();
+
+    datosActuales
+        .filter(fila =>
+            fila.Codigo_Tecnico === codigoIndicador &&
+            Number.isFinite(obtenerNumeroValor(fila.Valor))
+        )
+        .forEach(fila => {
+            const codigo = fila.Codigo_Biblioteca_REBIUN;
+            const meta = mapaBibliotecas.get(codigo);
+            bibliotecas.set(codigo, {
+                codigo,
+                nombre: meta?.Biblioteca || fila.Biblioteca,
+                siglas: meta?.Siglas || ""
+            });
+        });
+
+    const opciones = [...bibliotecas.values()].sort((a, b) =>
+        (a.siglas || a.nombre).localeCompare(
+            b.siglas || b.nombre,
+            "es",
+            { sensitivity: "base", numeric: true }
+        )
+    );
+
+    if (!bibliotecas.has(bibliotecaDestacadaEvolucion)) {
+        bibliotecaDestacadaEvolucion = "";
+    }
+
+    destacarBibliotecaEvolucionSelect.innerHTML = "";
+    const opcionNinguna = document.createElement("option");
+    opcionNinguna.value = "";
+    opcionNinguna.textContent = "Ninguna";
+    destacarBibliotecaEvolucionSelect.appendChild(opcionNinguna);
+
+    opciones.forEach(biblioteca => {
+        const opcion = document.createElement("option");
+        opcion.value = biblioteca.codigo;
+        opcion.textContent = biblioteca.siglas
+            ? `${biblioteca.nombre} · ${biblioteca.siglas}`
+            : biblioteca.nombre;
+        destacarBibliotecaEvolucionSelect.appendChild(opcion);
+    });
+
+    destacarBibliotecaEvolucionSelect.value =
+        bibliotecaDestacadaEvolucion;
+}
+
+
 function renderizarEvolucion() {
 
     const codigo = indicadorEvolucionSelect.value;
@@ -2938,7 +2997,8 @@ function renderizarEvolucion() {
     const anchoUtil = ancho - margen.izquierda - margen.derecha;
     const altoUtil = alto - margen.superior - margen.inferior;
     const maximo = Math.max(...valores, 0);
-    const escalaMaxima = maximo || 1;
+    const escala = calcularEscalaAgradable(maximo);
+    const escalaMaxima = escala.maximo;
     const x = anio =>
         margen.izquierda +
         (anios.length === 1
@@ -2948,8 +3008,8 @@ function renderizarEvolucion() {
         margen.superior + altoUtil - valor * altoUtil / escalaMaxima;
     const svg = crearSVG(ancho, alto, "Gráfico de evolución por biblioteca");
 
-    for (let i = 0; i <= 4; i += 1) {
-        const valor = escalaMaxima * i / 4;
+    for (let i = 0; i <= escala.divisiones; i += 1) {
+        const valor = escala.paso * i;
         const posicionY = y(valor);
         agregarElementoSVG(svg, "line", {
             x1: margen.izquierda,
@@ -2998,6 +3058,12 @@ function renderizarEvolucion() {
         const filaBiblioteca = filas.find(fila => fila.Biblioteca === biblioteca);
         const codigoBiblioteca = filaBiblioteca.Codigo_Biblioteca_REBIUN;
         const nombreCompleto = mapaBibliotecas.get(codigoBiblioteca)?.Biblioteca || biblioteca;
+        const hayDestacada = Boolean(bibliotecaDestacadaEvolucion);
+        const destacada = codigoBiblioteca === bibliotecaDestacadaEvolucion;
+        const colorSerie = hayDestacada && !destacada
+            ? "#BFC4C8"
+            : color;
+        const opacidadSerie = hayDestacada && !destacada ? 0.45 : 1;
         const mapa = new Map(
             filas
                 .filter(fila => fila.Biblioteca === biblioteca)
@@ -3010,8 +3076,11 @@ function renderizarEvolucion() {
                 agregarElementoSVG(svg, "polyline", {
                     points: puntosSegmento.join(" "),
                     fill: "none",
-                    stroke: color,
-                    "stroke-width": 2
+                    stroke: colorSerie,
+                    "stroke-width": hayDestacada
+                        ? destacada ? 3 : 1.25
+                        : 2,
+                    opacity: opacidadSerie
                 });
             }
             puntosSegmento = [];
@@ -3030,10 +3099,11 @@ function renderizarEvolucion() {
             const circulo = agregarElementoSVG(svg, "circle", {
                 cx: x(anio),
                 cy: y(valor),
-                r: 4,
-                fill: color,
+                r: destacada ? 4.5 : 4,
+                fill: colorSerie,
                 stroke: "#fff",
-                "stroke-width": 1
+                "stroke-width": 1,
+                opacity: opacidadSerie
             });
             const titulo = document.createElementNS(
                 "http://www.w3.org/2000/svg",
@@ -3046,9 +3116,13 @@ function renderizarEvolucion() {
         dibujarSegmento();
 
         const item = document.createElement("span");
-        item.className = "grafico-leyenda-item";
+        item.className = "grafico-leyenda-item" + (
+            hayDestacada
+                ? destacada ? " destacada" : " atenuada"
+                : ""
+        );
         item.innerHTML =
-            `<span class="grafico-leyenda-color" style="background:${color}"></span>` +
+            `<span class="grafico-leyenda-color" style="background:${colorSerie}"></span>` +
             `<span>${escaparHTML(etiquetaGraficoBiblioteca(codigoBiblioteca, nombreCompleto))}</span>`;
         leyenda.appendChild(item);
     });
@@ -3452,6 +3526,10 @@ function svgExportable(tipoVista) {
                         item.querySelector(".grafico-leyenda-color")
                     ).backgroundColor
                 );
+                circulo.setAttribute(
+                    "opacity",
+                    item.classList.contains("atenuada") ? "0.45" : "1"
+                );
                 grupo.appendChild(circulo);
             }
 
@@ -3462,6 +3540,12 @@ function svgExportable(tipoVista) {
             texto.setAttribute("x", "30");
             texto.setAttribute("y", String(y));
             texto.setAttribute("class", "grafico-texto");
+            if (item.classList.contains("atenuada")) {
+                texto.setAttribute("opacity", "0.45");
+            }
+            if (item.classList.contains("destacada")) {
+                texto.setAttribute("font-weight", "600");
+            }
             texto.textContent = item.textContent.trim();
             grupo.appendChild(texto);
         });
@@ -3689,7 +3773,19 @@ selectorVistas
 
 indicadorEvolucionSelect.addEventListener(
     "change",
-    renderizarEvolucion
+    () => {
+        reconstruirBibliotecasEvolucion();
+        renderizarEvolucion();
+    }
+);
+
+destacarBibliotecaEvolucionSelect.addEventListener(
+    "change",
+    () => {
+        bibliotecaDestacadaEvolucion =
+            destacarBibliotecaEvolucionSelect.value;
+        renderizarEvolucion();
+    }
 );
 
 mostrarPromedioEvolucion.addEventListener(

@@ -1679,6 +1679,19 @@ td {
     flex: 1 1 380px;
 }
 
+#evolucion .controles-grafico > .campo-destacar-biblioteca {
+    flex: 0 1 280px;
+}
+
+.grafico-leyenda-item.atenuada {
+    color: var(--color-text-secondary);
+    opacity: 0.45;
+}
+
+.grafico-leyenda-item.destacada {
+    font-weight: 600;
+}
+
 .control-promedio,
 .boton-descarga-grafico,
 .controles-disposicion-comparacion label,
