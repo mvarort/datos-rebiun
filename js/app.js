@@ -3201,7 +3201,7 @@ function renderizarComparacion() {
         Math.min(300, Math.max(...barras.map(barra => barra.etiqueta.length)) * 5 + 20)
     );
     const margen = vertical
-        ? { superior: 35, derecha: 275, inferior: espacioEtiquetas, izquierda: 75 }
+        ? { superior: 35, derecha: 35, inferior: espacioEtiquetas, izquierda: 75 }
         : { superior: 18, derecha: 105, inferior: 25, izquierda: 260 };
     const alto = vertical
         ? 375 + margen.inferior
@@ -3342,7 +3342,7 @@ function renderizarComparacion() {
         });
         agregarElementoSVG(svg, "text", {
             x: vertical
-                ? ancho - 8
+                ? margen.izquierda + anchoUtil - 6
                 : posicionPromedio + (etiquetaALaDerecha ? 6 : -6),
             y: vertical ? Math.max(18, posicionPromedio - 6) : 12,
             "text-anchor": vertical
