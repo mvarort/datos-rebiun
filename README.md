@@ -9,10 +9,11 @@ Permite combinar bibliotecas, años e indicadores, generar tablas longitudinales
 
 ## Datos disponibles
 
-La versión actual integra las campañas **2017–2025**.
+La versión actual integra las campañas **2016–2025**.
 
 | Año | Registros | Indicadores |
 |---:|---:|---:|
+| 2016 | 9.108 | 132 |
 | 2017 | 7.630 | 109 |
 | 2018 | 7.848 | 109 |
 | 2019 | 8.352 | 116 |
@@ -23,7 +24,9 @@ La versión actual integra las campañas **2017–2025**.
 | 2024 | 12.168 | 156 |
 | 2025 | 12.558 | 161 |
 
-El fichero longitudinal contiene **89.755 registros** y el directorio institucional reúne **78 bibliotecas o instituciones REBIUN**.
+El fichero longitudinal contiene **98.863 registros** y el directorio institucional reúne **78 bibliotecas o instituciones REBIUN**.
+
+`Codigo_Tecnico` identifica cada indicador a lo largo de la serie. El conjunto incluye indicadores históricos que pueden dejar de aparecer en campañas posteriores.
 
 ## Funcionalidades
 

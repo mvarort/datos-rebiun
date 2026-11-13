@@ -1413,6 +1413,7 @@ function obtenerNombreTaxonomia(
 
     let mejorHistorico =
         null;
+    let codigoEnSeleccion = false;
 
 
     datos.forEach(d => {
@@ -1425,6 +1426,10 @@ function obtenerNombreTaxonomia(
             return;
         }
 
+
+        if (conjuntoAnios?.has(d.Anio)) {
+            codigoEnSeleccion = true;
+        }
 
         const nombre =
             String(
@@ -1482,7 +1487,7 @@ function obtenerNombreTaxonomia(
         mejorSeleccionado
             ? mejorSeleccionado.nombre
             : (
-                mejorHistorico
+                !codigoEnSeleccion && mejorHistorico
                     ? mejorHistorico.nombre
                     : ""
             );
@@ -1595,7 +1600,7 @@ function cargarEjes() {
 
 
                 opcion.textContent =
-                    `${eje.codigo}. ${eje.nombre}`;
+                    eje.nombre ? `${eje.codigo}. ${eje.nombre}` : `Eje ${eje.codigo}`;
 
 
                 ejeSelect.appendChild(
@@ -1729,7 +1734,7 @@ function cargarApartados() {
 
 
                 opcion.textContent =
-                    `${apartado.codigo} ${apartado.nombre}`;
+                    apartado.nombre ? `${apartado.codigo} ${apartado.nombre}` : `Apartado ${apartado.codigo}`;
 
 
                 apartadoSelect.appendChild(
