@@ -9,10 +9,11 @@ Permite combinar bibliotecas, años e indicadores, generar tablas longitudinales
 
 ## Datos disponibles
 
-La versión actual integra las campañas **2020–2025**.
+La versión actual integra las campañas **2019–2025**.
 
 | Año | Registros | Indicadores |
 |---:|---:|---:|
+| 2019 | 8.352 | 116 |
 | 2020 | 9.102 | 123 |
 | 2021 | 9.490 | 130 |
 | 2022 | 10.439 | 143 |
@@ -20,7 +21,7 @@ La versión actual integra las campañas **2020–2025**.
 | 2024 | 12.168 | 156 |
 | 2025 | 12.558 | 161 |
 
-El fichero longitudinal contiene **65.925 registros** y el directorio institucional reúne **78 bibliotecas o instituciones REBIUN**.
+El fichero longitudinal contiene **74.277 registros** y el directorio institucional reúne **78 bibliotecas o instituciones REBIUN**.
 
 ## Funcionalidades
 
@@ -40,6 +41,7 @@ El código oficial REBIUN se muestra delante del nombre de cada institución, po
 
 ```text
 [67] Universidad de Sevilla
+```
 
 ## Fuente de las siglas institucionales
 
