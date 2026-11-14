@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REBIUN Data Explorer | Estadísticas REBIUN</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+
+<body class="prueba-rediseno">
+
+<main>
+
+    <header class="cabecera-aplicacion">
+        <h1>REBIUN Data Explorer</h1>
+        <p class="subtitulo-aplicacion">
+            Explorador de datos estadísticos de bibliotecas REBIUN
+        </p>
+        <p class="metadatos-aplicacion">Datos 2016–2025 · 78 instituciones</p>
+    </header>
+<div class="barra-seleccion">
+    <p id="seleccion-actual" role="status">Cargando selección…</p>
+    <button type="button" id="alternar-seleccion" aria-label="Ocultar panel de bibliotecas" aria-expanded="true" aria-controls="panel-seleccion">Ocultar bibliotecas</button>
+</div>
+<div class="espacio-trabajo">
+<aside id="panel-seleccion" aria-labelledby="titulo-seleccion">
+<h2 id="titulo-seleccion">Selección institucional</h2>
+<section class="grupo-seleccion">
+    <h3><button class="acordeon" type="button" aria-expanded="false" aria-controls="filtros-bibliotecas">
+        <span>Bibliotecas</span><span class="detalle-seleccion" id="detalle-bibliotecas"></span>
+    </button></h3>
+    <div class="filtros" id="filtros-bibliotecas" hidden><div class="segmentadores">
+
+                <div class="campo">
+
+                    <label for="comunidad">
+                        Comunidad autónoma
+                    </label>
+
+                    <select id="comunidad">
+                        <option value="">Todas</option>
+                    </select>
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="modalidad">
+                        Modalidad
+                    </label>
+
+                    <select id="modalidad">
+                        <option value="">Todas</option>
+                    </select>
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="titularidad">
+                        Titularidad
+                    </label>
+
+                    <select id="titularidad">
+                        <option value="">Todas</option>
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div class="fila-segmentador-tamano">
+<fieldset class="segmentador-tamano">
+
+                <legend>
+                    Tamaño por personas usuarias propias
+                </legend>
+
+                <div
+                    class="opciones-tamano"
+                    id="segmentador-tamano"
+                    role="radiogroup"
+                    aria-label="Tamaño por personas usuarias propias">
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="grupo1">
+                        <span>Grupo 1 · Hasta 20.000</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="grupo2">
+                        <span>Grupo 2 · 20.001–40.000</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="grupo3">
+                        <span>Grupo 3 · 40.001 o más</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="sin-dato">
+                        <span>Sin dato</span>
+                    </label>
+
+                    <label class="opcion-tamano">
+                        <input type="radio" name="tamanoUsuarios" value="todas" checked>
+                        <span>Todas</span>
+                    </label>
+
+                </div>
+
+            </fieldset>
+            </div>
+
+
+            <div class="bloque-lista">
+
+                <div class="cabecera-lista cabecera-acciones">
+
+                    <div>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="marcar-bibliotecas">
+                            Marcar visibles
+                        </button>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="desmarcar-bibliotecas">
+                            Desmarcar visibles
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <input
+                    type="search"
+                    id="buscar-biblioteca" aria-label="Buscar bibliotecas"
+                    class="buscador"
+                    placeholder="Buscar por universidad, código o sigla...">
+
+
+                <div
+                    id="lista-bibliotecas"
+                    class="lista-checks lista-bibliotecas">
+                </div>
+
+
+                <div
+                    id="contador-bibliotecas"
+                    class="contador">
+                </div>
+
+            </div></div>
+</section>
+
+
+
+</aside>
+<div class="area-analisis">
+    <section class="catalogo-indicadores" aria-labelledby="titulo-indicadores">
+        <h2 id="titulo-indicadores">Indicadores</h2>
+        <div class="segmentadores filtros-catalogo">
+
+            <div class="campo">
+
+                <label for="eje">
+                    Eje
+                </label>
+
+                <select id="eje">
+
+                    <option value="">
+                        Todos los ejes
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="campo">
+
+                <label for="apartado">
+                    Apartado
+                </label>
+
+                <select id="apartado">
+
+                    <option value="">
+                        Todos los apartados
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div
+                class="campo campo-estado-indicadores"
+                id="filtro-estado-indicadores">
+
+                <span class="etiqueta-control">
+                    Estado
+                </span>
+
+                <div
+                    class="botones-estado-indicadores"
+                    role="group"
+                    aria-label="Estado de los indicadores">
+
+                    <button
+                        type="button"
+                        class="boton-estado-indicadores activo"
+                        data-estado-indicadores="vigentes"
+                        aria-pressed="true">
+                        Vigentes
+                    </button>
+
+                    <button
+                        type="button"
+                        class="boton-estado-indicadores"
+                        data-estado-indicadores="historicos"
+                        aria-pressed="false">
+                        Históricos
+                    </button>
+
+                    <button
+                        type="button"
+                        class="boton-estado-indicadores"
+                        data-estado-indicadores="todos"
+                        aria-pressed="false">
+                        Todos
+                    </button>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <div class="bloque-lista">
+
+            <div class="herramientas-catalogo">
+                <input
+                type="search"
+                id="buscar-indicador" aria-label="Buscar indicadores"
+                class="buscador"
+                placeholder="Buscar por código o nombre...">
+                <div class="acciones-catalogo">
+                    <button
+                        type="button"
+                        class="mini"
+                        id="marcar-indicadores">
+                        Marcar visibles
+                    </button>
+
+                    <button
+                        type="button"
+                        class="mini"
+                        id="desmarcar-indicadores">
+                        Desmarcar visibles
+                    </button>
+
+                </div>
+            </div>
+
+            <div
+                id="lista-indicadores"
+                class="lista-checks lista-indicadores">
+            </div>
+
+
+            <div
+                id="contador-indicadores"
+                class="contador">
+            </div>
+
+        </div>
+    </section>
+<section class="grupo-seleccion periodo-consulta">
+    <h3><button class="acordeon" type="button" aria-expanded="true" aria-controls="filtros-anios">
+        <span>Años</span><span class="detalle-seleccion" id="detalle-anios"></span>
+    </button></h3>
+    <div class="filtros" id="filtros-anios"><div class="bloque-lista bloque-anios">
+
+                <div class="cabecera-lista cabecera-acciones">
+
+                    <div>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="todos-anios">
+                            Todos
+                        </button>
+
+                        <button
+                            type="button"
+                            class="mini"
+                            id="ningun-anio">
+                            Ninguno
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="lista-anios"
+                    class="lista-checks lista-anios">
+                </div>
+
+
+                <div
+                    id="contador-anios"
+                    class="contador">
+                </div>
+
+            </div></div>
+</section>
+        <button id="aplicar-seleccion" type="button" disabled>Aplicar selección</button>
+    <section class="seccion-resultados" aria-label="Resultados">
+
+        <div id="resumen"></div>
+
+        <div
+            id="selector-vistas"
+            class="selector-vistas"
+            role="tablist"
+            aria-label="Visualización del resultado"
+            hidden>
+
+            <button
+                type="button"
+                class="pestana-vista activa"
+                role="tab"
+                id="pestana-tabla"
+                data-vista="tabla"
+                aria-controls="panel-tabla"
+                aria-selected="true">
+                Tabla
+            </button>
+
+            <button
+                type="button"
+                class="pestana-vista"
+                role="tab"
+                id="pestana-evolucion" tabindex="-1"
+                data-vista="evolucion"
+                aria-controls="evolucion"
+                aria-selected="false">
+                Evolución
+            </button>
+
+            <button
+                type="button"
+                class="pestana-vista"
+                role="tab"
+                id="pestana-comparacion" tabindex="-1"
+                data-vista="comparacion"
+                aria-controls="comparacion"
+                aria-selected="false">
+                Comparación
+            </button>
+
+        </div>
+
+        <div id="panel-tabla" role="tabpanel" aria-labelledby="pestana-tabla">
+<div class="organizacion">
+
+            <div class="campo">
+
+                <label for="filas">
+                    Filas
+                </label>
+
+                <select id="filas">
+
+                    <option value="Biblioteca">
+                        Biblioteca
+                    </option>
+
+                    <option value="Anio">
+                        Año
+                    </option>
+
+                    <option value="IndicadorEtiqueta">
+                        Indicador
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="campo">
+
+                <label for="columnas">
+                    Columnas
+                </label>
+
+                <select id="columnas">
+
+                    <option value="Anio">
+                        Año
+                    </option>
+
+                    <option value="Biblioteca">
+                        Biblioteca
+                    </option>
+
+                    <option value="IndicadorEtiqueta">
+                        Indicador
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <button
+                id="generar"
+                type="button">
+                Actualizar resultados
+            </button>
+
+
+            <button
+                id="descargar"
+                type="button">
+                Descargar CSV
+            </button>
+
+        </div>
+<div id="tabla" tabindex="0" role="region" aria-label="Resultado tabular"></div>
+</div>
+
+        <div
+            id="evolucion"
+            class="vista-grafico"
+            role="tabpanel"
+            aria-labelledby="pestana-evolucion"
+            hidden>
+
+            <div class="controles-grafico">
+                <div class="campo">
+                    <label for="indicador-evolucion">
+                        Indicador a visualizar
+                    </label>
+                    <select id="indicador-evolucion"></select>
+                </div>
+
+                <div class="campo campo-destacar-biblioteca">
+                    <label for="destacar-biblioteca-evolucion">
+                        Destacar biblioteca (opcional)
+                    </label>
+                    <select id="destacar-biblioteca-evolucion">
+                        <option value="">Ninguna</option>
+                    </select>
+                </div>
+
+                <label class="control-promedio">
+                    <input type="checkbox" id="mostrar-promedio-evolucion">
+                    Mostrar promedio
+                </label>
+
+                <div class="descarga-grafico">
+                    <button
+                        type="button"
+                        class="boton-descarga-grafico"
+                        data-menu-descarga="evolucion"
+                        aria-controls="opciones-descarga-evolucion"
+                        aria-expanded="false">
+                        Descargar gráfico
+                    </button>
+                    <div
+                        class="menu-descarga-grafico"
+                        id="opciones-descarga-evolucion"
+                        role="group"
+                        data-menu="evolucion"
+                        hidden>
+                        <button type="button" data-descarga="png" data-vista-descarga="evolucion">PNG</button>
+                        <button type="button" data-descarga="pdf" data-vista-descarga="evolucion">PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metricas-grafico" id="metricas-evolucion" aria-label="Resumen del gráfico" hidden></div>
+            <div
+                id="grafico-evolucion"
+                class="contenedor-grafico">
+            </div>
+
+        </div>
+
+        <div
+            id="comparacion"
+            class="vista-grafico"
+            role="tabpanel"
+            aria-labelledby="pestana-comparacion"
+            hidden>
+
+            <div class="controles-grafico">
+                <div class="campo">
+                    <label for="indicador-comparacion">
+                        Indicador
+                    </label>
+                    <select id="indicador-comparacion"></select>
+                </div>
+
+                <div class="campo">
+                    <label for="destacar-comparacion">Destacar biblioteca</label>
+                    <select id="destacar-comparacion"></select>
+                </div>
+                <fieldset class="selector-modo-comparacion">
+                    <legend>Modo de comparación</legend>
+                    <div class="chips-anios" role="group" aria-label="Modo de comparación">
+                        <button type="button" class="chip-anio activo" data-modo-comparacion="absoluto" aria-pressed="true">Valores absolutos</button>
+                        <button type="button" class="chip-anio" data-modo-comparacion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
+                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado." title="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado.">ⓘ</span>
+                    </div>
+                </fieldset>
+
+                <div class="controles-disposicion-comparacion">
+                    <div class="campo">
+                        <label for="orden-comparacion">Ordenar</label>
+                        <select id="orden-comparacion">
+                            <option value="desc">Mayor a menor</option>
+                            <option value="asc">Menor a mayor</option>
+                            <option value="alfabetico">Alfabético</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="orientacion-comparacion">Orientación</label>
+                        <select id="orientacion-comparacion">
+                            <option value="horizontal" selected>Horizontal</option>
+                            <option value="vertical">Vertical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <fieldset class="selector-anios-comparacion">
+                    <legend>Año</legend>
+                    <div
+                        id="anios-comparacion"
+                        class="chips-anios"
+                        role="group"
+                        aria-label="Año de comparación">
+                    </div>
+                </fieldset>
+
+                <div class="descarga-grafico">
+                    <button
+                        type="button"
+                        class="boton-descarga-grafico"
+                        data-menu-descarga="comparacion"
+                        aria-controls="opciones-descarga-comparacion"
+                        aria-expanded="false">
+                        Descargar gráfico
+                    </button>
+                    <div
+                        class="menu-descarga-grafico"
+                        id="opciones-descarga-comparacion"
+                        role="group"
+                        data-menu="comparacion"
+                        hidden>
+                        <button type="button" data-descarga="png" data-vista-descarga="comparacion">PNG</button>
+                        <button type="button" data-descarga="pdf" data-vista-descarga="comparacion">PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="metricas-grafico" id="metricas-comparacion" aria-label="Resumen del gráfico" hidden></div>
+            <div
+                id="grafico-comparacion"
+                class="contenedor-grafico">
+            </div>
+
+        </div>
+
+        <footer class="pie-resultados">
+            <div>Autor: Miguel Varo</div>
+            <div>Colabora: Grupo de Estadísticas de REBIUN</div>
+            <div>Fecha de actualización: <time id="fecha-actualizacion"></time></div>
+        </footer>
+
+    </section>
+
+
+</div>
+</div>
+</main>
+
+<section
+    id="vista-impresion-grafico"
+    class="vista-impresion-grafico"
+    aria-hidden="true">
+</section>
+
+<script src="app.js"></script>
+
+</body>
+
+</html>
