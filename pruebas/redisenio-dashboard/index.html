@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REBIUN Data Explorer | Estadísticas REBIUN</title>
-    <link rel="stylesheet" href="estilos.css">
+    <link rel="stylesheet" href="estilos.css?v=opciones-grafico">
 </head>
 
 <body class="prueba-rediseno">
@@ -13,11 +13,12 @@
 <main>
 
     <header class="cabecera-aplicacion">
-        <h1>REBIUN Data Explorer</h1>
+        <h1><svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m2 8 10-5 10 5-10 5zM2 12l10 5 10-5M2 16l10 5 10-5"/></svg><span>REBIUN Data Explorer</span></h1>
         <p class="subtitulo-aplicacion">
             Explorador de datos estadísticos de bibliotecas REBIUN
         </p>
         <p class="metadatos-aplicacion">Datos 2016–2025 · 78 instituciones</p>
+        <p class="grupo-estadisticas">Grupo de Estadísticas de REBIUN</p>
     </header>
 <div class="barra-seleccion">
     <p id="seleccion-actual" role="status">Cargando selección…</p>
@@ -25,12 +26,20 @@
 </div>
 <div class="espacio-trabajo">
 <aside id="panel-seleccion" aria-labelledby="titulo-seleccion">
-<h2 id="titulo-seleccion">Selección institucional</h2>
+<h2 id="titulo-seleccion" class="solo-lectura">Selección institucional</h2>
 <section class="grupo-seleccion">
-    <h3><button class="acordeon" type="button" aria-expanded="false" aria-controls="filtros-bibliotecas">
-        <span>Bibliotecas</span><span class="detalle-seleccion" id="detalle-bibliotecas"></span>
+    <h3><button class="acordeon" type="button" aria-expanded="true" aria-controls="filtros-bibliotecas">
+        <span class="titulo-con-icono"><svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-6 9 6H3zm2 2v8m5-8v8m4-8v8m5-8v8M3 21h18"/></svg>Bibliotecas</span><span class="detalle-seleccion" id="detalle-bibliotecas"></span>
     </button></h3>
-    <div class="filtros" id="filtros-bibliotecas" hidden><div class="segmentadores">
+    <div class="filtros" id="filtros-bibliotecas">
+        <input
+                    type="search"
+                    id="buscar-biblioteca" aria-label="Buscar bibliotecas"
+                    class="buscador"
+                    placeholder="Nombre, código o sigla">
+        <details class="filtros-institucionales">
+            <summary>Filtros institucionales</summary>
+        <div class="segmentadores">
 
                 <div class="campo">
 
@@ -115,7 +124,7 @@
 
             </fieldset>
             </div>
-
+        </details>
 
             <div class="bloque-lista">
 
@@ -142,11 +151,7 @@
                 </div>
 
 
-                <input
-                    type="search"
-                    id="buscar-biblioteca" aria-label="Buscar bibliotecas"
-                    class="buscador"
-                    placeholder="Buscar por universidad, código o sigla...">
+
 
 
                 <div
@@ -168,7 +173,7 @@
 </aside>
 <div class="area-analisis">
     <section class="catalogo-indicadores" aria-labelledby="titulo-indicadores">
-        <h2 id="titulo-indicadores">Indicadores</h2>
+        <h2 id="titulo-indicadores" class="titulo-con-icono"><svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-5m7 5V9m7 11V4"/></svg>Indicadores</h2>
         <div class="segmentadores filtros-catalogo">
 
             <div class="campo">
@@ -290,7 +295,7 @@
     </section>
 <section class="grupo-seleccion periodo-consulta">
     <h3><button class="acordeon" type="button" aria-expanded="true" aria-controls="filtros-anios">
-        <span>Años</span><span class="detalle-seleccion" id="detalle-anios"></span>
+        <span class="titulo-con-icono"><svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="15" rx="2"/><path d="M7 3v6m10-6v6M3 11h18"/></svg>Años</span><span class="detalle-seleccion" id="detalle-anios"></span>
     </button></h3>
     <div class="filtros" id="filtros-anios"><div class="bloque-lista bloque-anios">
 
@@ -330,9 +335,11 @@
 
             </div></div>
 </section>
-        <button id="aplicar-seleccion" type="button" disabled>Aplicar selección</button>
+        <button id="aplicar-seleccion" type="button" disabled>Actualizar resultados</button>
     <section class="seccion-resultados" aria-label="Resultados">
 
+            <div class="metricas-grafico" id="metricas-evolucion" aria-label="Resumen del gráfico" hidden></div>
+            <div class="metricas-grafico" id="metricas-comparacion" aria-label="Resumen del gráfico" hidden></div>
         <div id="resumen"></div>
 
         <div
@@ -346,22 +353,11 @@
                 type="button"
                 class="pestana-vista activa"
                 role="tab"
-                id="pestana-tabla"
-                data-vista="tabla"
-                aria-controls="panel-tabla"
-                aria-selected="true">
-                Tabla
-            </button>
-
-            <button
-                type="button"
-                class="pestana-vista"
-                role="tab"
-                id="pestana-evolucion" tabindex="-1"
+                id="pestana-evolucion"
                 data-vista="evolucion"
                 aria-controls="evolucion"
-                aria-selected="false">
-                Evolución
+                aria-selected="true">
+                <svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 6-6 4 3 7-8m-6 0h6v6"/></svg> Evolución
             </button>
 
             <button
@@ -372,8 +368,23 @@
                 data-vista="comparacion"
                 aria-controls="comparacion"
                 aria-selected="false">
-                Comparación
+                <svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-5m7 5V9m7 11V4"/></svg> Comparación
             </button>
+
+            <button
+                type="button"
+                class="pestana-vista"
+                role="tab"
+                id="pestana-tabla" tabindex="-1"
+                data-vista="tabla"
+                aria-controls="panel-tabla"
+                aria-selected="false">
+                <svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11m6-11v11"/></svg> Tabla
+            </button>
+
+            <button type="button" class="pestana-vista" role="tab"
+                    id="pestana-proyeccion" tabindex="-1" data-vista="proyeccion"
+                    aria-controls="proyeccion" aria-selected="false">Proyección</button>
 
         </div>
 
@@ -453,28 +464,17 @@
             role="tabpanel"
             aria-labelledby="pestana-evolucion"
             hidden>
+            <h2 class="titulo-con-icono"><svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 6-6 4 3 7-8m-6 0h6v6"/></svg><span id="titulo-grafico-evolucion">Evolución del indicador</span></h2>
+            <p class="contexto-indicador" id="cobertura-evolucion"></p>
 
             <div class="controles-grafico">
                 <div class="campo">
                     <label for="indicador-evolucion">
                         Indicador a visualizar
                     </label>
-                    <select id="indicador-evolucion"></select>
+                    <select id="indicador-evolucion" aria-describedby="contexto-indicador-evolucion"></select>
+                    <p class="contexto-indicador" id="contexto-indicador-evolucion"></p>
                 </div>
-
-                <div class="campo campo-destacar-biblioteca">
-                    <label for="destacar-biblioteca-evolucion">
-                        Destacar biblioteca (opcional)
-                    </label>
-                    <select id="destacar-biblioteca-evolucion">
-                        <option value="">Ninguna</option>
-                    </select>
-                </div>
-
-                <label class="control-promedio">
-                    <input type="checkbox" id="mostrar-promedio-evolucion">
-                    Mostrar promedio
-                </label>
 
                 <div class="descarga-grafico">
                     <button
@@ -495,9 +495,34 @@
                         <button type="button" data-descarga="pdf" data-vista-descarga="evolucion">PDF</button>
                     </div>
                 </div>
+                <button type="button" class="boton-opciones-grafico"
+                        aria-expanded="false" aria-controls="ajustes-evolucion">Opciones del gráfico</button>
             </div>
 
-            <div class="metricas-grafico" id="metricas-evolucion" aria-label="Resumen del gráfico" hidden></div>
+            <div class="ajustes-grafico" id="ajustes-evolucion" hidden>
+                <div class="campo campo-destacar-biblioteca">
+                    <label for="destacar-biblioteca-evolucion">
+                        Destacar biblioteca (opcional)
+                    </label>
+                    <select id="destacar-biblioteca-evolucion">
+                        <option value="">Ninguna</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="formato-evolucion">Vista</label>
+                    <select id="formato-evolucion">
+                        <option value="lineas">Líneas</option>
+                        <option value="barras">Barras · Biblioteca frente al grupo</option>
+                    </select>
+                </div>
+
+                <label class="control-promedio">
+                    <input type="checkbox" id="mostrar-promedio-evolucion">
+                    Mostrar promedio
+                </label>
+            </div>
+
             <div
                 id="grafico-evolucion"
                 class="contenedor-grafico">
@@ -511,44 +536,15 @@
             role="tabpanel"
             aria-labelledby="pestana-comparacion"
             hidden>
+            <h2 class="titulo-con-icono"><svg class="icono-interfaz" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-5m7 5V9m7 11V4"/></svg><span id="titulo-grafico-comparacion">Comparación del indicador</span></h2>
 
             <div class="controles-grafico">
                 <div class="campo">
                     <label for="indicador-comparacion">
                         Indicador
                     </label>
-                    <select id="indicador-comparacion"></select>
-                </div>
-
-                <div class="campo">
-                    <label for="destacar-comparacion">Destacar biblioteca</label>
-                    <select id="destacar-comparacion"></select>
-                </div>
-                <fieldset class="selector-modo-comparacion">
-                    <legend>Modo de comparación</legend>
-                    <div class="chips-anios" role="group" aria-label="Modo de comparación">
-                        <button type="button" class="chip-anio activo" data-modo-comparacion="absoluto" aria-pressed="true">Valores absolutos</button>
-                        <button type="button" class="chip-anio" data-modo-comparacion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
-                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado." title="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado.">ⓘ</span>
-                    </div>
-                </fieldset>
-
-                <div class="controles-disposicion-comparacion">
-                    <div class="campo">
-                        <label for="orden-comparacion">Ordenar</label>
-                        <select id="orden-comparacion">
-                            <option value="desc">Mayor a menor</option>
-                            <option value="asc">Menor a mayor</option>
-                            <option value="alfabetico">Alfabético</option>
-                        </select>
-                    </div>
-                    <div class="campo">
-                        <label for="orientacion-comparacion">Orientación</label>
-                        <select id="orientacion-comparacion">
-                            <option value="horizontal" selected>Horizontal</option>
-                            <option value="vertical">Vertical</option>
-                        </select>
-                    </div>
+                    <select id="indicador-comparacion" aria-describedby="contexto-indicador-comparacion"></select>
+                    <p class="contexto-indicador" id="contexto-indicador-comparacion"></p>
                 </div>
 
                 <fieldset class="selector-anios-comparacion">
@@ -580,9 +576,47 @@
                         <button type="button" data-descarga="pdf" data-vista-descarga="comparacion">PDF</button>
                     </div>
                 </div>
+                <button type="button" class="boton-opciones-grafico"
+                        aria-expanded="false" aria-controls="ajustes-comparacion">Opciones del gráfico</button>
             </div>
 
-            <div class="metricas-grafico" id="metricas-comparacion" aria-label="Resumen del gráfico" hidden></div>
+            <div class="ajustes-grafico" id="ajustes-comparacion" hidden>
+                <div class="campo">
+                    <label for="destacar-comparacion">Destacar biblioteca</label>
+                    <select id="destacar-comparacion"></select>
+                </div>
+                <fieldset class="selector-modo-comparacion">
+                    <legend>Modo de comparación</legend>
+                    <div class="chips-anios" role="group" aria-label="Modo de comparación">
+                        <button type="button" class="chip-anio activo" data-modo-comparacion="absoluto" aria-pressed="true">Valores absolutos</button>
+                        <button type="button" class="chip-anio" data-modo-comparacion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
+                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado." title="Normaliza el indicador dividiéndolo entre las personas usuarias propias de cada biblioteca en el año seleccionado. Utilice esta opción solo cuando esta relación sea adecuada para el indicador consultado.">ⓘ</span>
+                    </div>
+                </fieldset>
+
+                <div class="controles-disposicion-comparacion">
+                    <div class="campo">
+                        <label for="orden-comparacion">Ordenar</label>
+                        <select id="orden-comparacion">
+                            <option value="desc">Mayor a menor</option>
+                            <option value="asc">Menor a mayor</option>
+                            <option value="alfabetico">Alfabético</option>
+                        </select>
+                    </div>
+                    <div class="campo">
+                        <label for="orientacion-comparacion">Orientación</label>
+                        <select id="orientacion-comparacion">
+                            <option value="horizontal" selected>Horizontal</option>
+                            <option value="vertical">Vertical</option>
+                        </select>
+                    </div>
+                </div>
+                <label class="control-promedio">
+                    <input type="checkbox" id="mostrar-promedio-comparacion" checked>
+                    Mostrar promedio de referencia
+                </label>
+            </div>
+
             <div
                 id="grafico-comparacion"
                 class="contenedor-grafico">
@@ -590,17 +624,56 @@
 
         </div>
 
+
+
+        <div id="proyeccion" class="vista-grafico" role="tabpanel" aria-labelledby="pestana-proyeccion" hidden>
+            <h2>Proyección</h2>
+            <div class="controles-grafico">
+                <div class="campo"><label for="indicador-proyeccion">Indicador</label><select id="indicador-proyeccion"></select></div>
+                <div class="campo"><label for="biblioteca-proyeccion">Biblioteca</label><select id="biblioteca-proyeccion"></select></div>
+                <div class="campo"><label for="periodo-proyeccion">Periodo de referencia</label>
+                    <select id="periodo-proyeccion">
+                        <option value="serie">Serie de la consulta</option>
+                        <option value="reciente">Últimos cuatro años</option>
+                    </select>
+                </div>
+                <div class="campo"><label for="horizonte-proyeccion">Horizonte</label>
+                    <select id="horizonte-proyeccion">
+                        <option value="1">1 año</option>
+                        <option value="3" selected>3 años</option>
+                    </select>
+                </div>
+                <div class="campo"><label for="nivel-proyeccion">Intervalo de predicción</label>
+                    <select id="nivel-proyeccion">
+                        <option value="95">95 %</option>
+                        <option value="80">80 %</option>
+                    </select>
+                </div>
+                <div class="campo"><label for="metodo-proyeccion">Método</label>
+                    <select id="metodo-proyeccion">
+                        <option value="lineal">Tendencia lineal</option>
+                        <option value="ultimo">Último valor observado</option>
+                    </select>
+                </div>
+            </div>
+            <p id="resultado-proyeccion" class="resultado-proyeccion" role="status"></p>
+            <div id="grafico-proyeccion" class="contenedor-grafico" role="region" aria-label="Gráfico de proyección" tabindex="0"></div>
+            <p id="banda-proyeccion" hidden><span aria-hidden="true"></span>
+                Banda sombreada: intervalo de predicción estimado. Línea discontinua: proyección del método seleccionado.
+            </p>
+            <ul id="rangos-proyeccion" aria-label="Rango por año"></ul>
+            <p id="validacion-proyeccion"></p>
+        </div>
+
+    </section>
+
+</div>
+</div>
         <footer class="pie-resultados">
             <div>Autor: Miguel Varo</div>
             <div>Colabora: Grupo de Estadísticas de REBIUN</div>
             <div>Fecha de actualización: <time id="fecha-actualizacion"></time></div>
         </footer>
-
-    </section>
-
-
-</div>
-</div>
 </main>
 
 <section
@@ -609,7 +682,7 @@
     aria-hidden="true">
 </section>
 
-<script src="app.js"></script>
+<script src="app.js?v=opciones-grafico"></script>
 
 </body>
 
