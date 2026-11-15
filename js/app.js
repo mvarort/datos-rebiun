@@ -116,10 +116,14 @@ tablaElemento.innerHTML =
 botonGenerar.disabled = true;
 botonDescargar.disabled = true;
 
+const versionDatos = new URLSearchParams(window.location.search).get("v");
+const sufijoVersionDatos = versionDatos === null
+    ? ""
+    : `?${new URLSearchParams({ v: versionDatos })}`;
 
 Promise.all([
 
-    fetch("data/rebiun_real.csv")
+    fetch(`data/rebiun_real.csv${sufijoVersionDatos}`, { cache: "no-store" })
         .then(r => {
 
             if (!r.ok) {
@@ -129,7 +133,7 @@ Promise.all([
             return r.text();
         }),
 
-    fetch("data/bibliotecas_rebiun.csv")
+    fetch(`data/bibliotecas_rebiun.csv${sufijoVersionDatos}`, { cache: "no-store" })
         .then(r => {
 
             if (!r.ok) {
@@ -175,11 +179,13 @@ Promise.all([
 
     cargarFiltros();
 
-    tablaElemento.innerHTML =
-        '<div class="mensaje">Seleccione los datos y pulse «Generar tabla».</div>';
-
+    const indicadoresIniciales = document.querySelectorAll('input[name="indicadorCheck"]');
+    indicadoresIniciales.forEach(input => {
+        input.checked = input.value === "NUSUARIOPROP";
+    });
+    actualizarContadores();
     botonGenerar.disabled = false;
-    botonDescargar.disabled = true;
+    generarTabla();
 })
 
 .catch(error => {
@@ -1917,15 +1923,7 @@ function cargarIndicadores() {
 
 
                 input.checked =
-                    estadoSeleccionIndicadores.has(
-                        indicador.tecnico
-                    )
-
-                        ? estadoSeleccionIndicadores.get(
-                            indicador.tecnico
-                        )
-
-                        : true;
+                    estadoSeleccionIndicadores.get(indicador.tecnico) === true;
 
 
                 const span =
@@ -2205,6 +2203,7 @@ function obtenerSeleccionados(
 
 
 function invalidarDatosActuales() {
+    cerrarMenusDescarga();
 
     datosActuales = [];
 
@@ -2213,10 +2212,12 @@ function invalidarDatosActuales() {
     selectorVistas.hidden = true;
 
     tablaElemento.hidden = true;
+    document.getElementById("panel-tabla").hidden = false;
 
     evolucionElemento.hidden = true;
 
     comparacionElemento.hidden = true;
+    document.getElementById("proyeccion").hidden = true;
 
     graficoEvolucionElemento.innerHTML = "";
 
@@ -2342,8 +2343,9 @@ function actualizarContador(
 
     if (elemento) {
 
-        elemento.textContent =
-            `${seleccionados.length} seleccionados · ${visibles.length} visibles`;
+        elemento.textContent = grupo === "indicadorCheck"
+            ? `${seleccionados.length} ${seleccionados.length === 1 ? "indicador marcado" : "indicadores marcados"} · ${visibles.length} visibles en el catálogo`
+            : `${seleccionados.length} seleccionados · ${visibles.length} visibles`;
     }
 }
 
@@ -2703,6 +2705,7 @@ function obtenerIndicadoresDatosActuales() {
 
 
 function rellenarSelectorIndicadores(select, indicadores) {
+    const anterior = select.value;
 
     select.innerHTML = "";
 
@@ -2714,6 +2717,9 @@ function rellenarSelectorIndicadores(select, indicadores) {
             `${indicador.Codigo_REBIUN} ${indicador.Indicador}`;
         select.appendChild(opcion);
     });
+    if (indicadores.some(indicador => indicador.Codigo_Tecnico === anterior)) {
+        select.value = anterior;
+    }
 }
 
 
@@ -2723,10 +2729,14 @@ function activarVista(nombreVista) {
         return;
     }
 
+    cerrarMenusDescarga();
+
     const paneles = {
-        tabla: tablaElemento,
+        tabla: document.getElementById("panel-tabla"),
+
         evolucion: evolucionElemento,
-        comparacion: comparacionElemento
+        comparacion: comparacionElemento,
+        proyeccion: document.getElementById("proyeccion")
     };
 
     Object.entries(paneles).forEach(
@@ -2744,6 +2754,8 @@ function activarVista(nombreVista) {
             boton.tabIndex = activo ? 0 : -1;
         });
 
+    tablaElemento.hidden = nombreVista !== "tabla";
+
     if (nombreVista === "evolucion") {
         renderizarEvolucion();
     }
@@ -2751,6 +2763,7 @@ function activarVista(nombreVista) {
     if (nombreVista === "comparacion") {
         renderizarComparacion();
     }
+    if (nombreVista === "proyeccion") renderizarProyeccion();
 }
 
 
@@ -2767,16 +2780,16 @@ function prepararVisualizaciones() {
         indicadores
     );
 
-    reconstruirBibliotecasEvolucion();
+    rellenarSelectorIndicadores(indicadorProyeccion, indicadores);
+    cargarBibliotecasProyeccion();
 
-    ordenComparacionSelect.value = "desc";
-    orientacionComparacionSelect.value = "vertical";
+    reconstruirBibliotecasEvolucion();
 
     actualizarModoComparacion();
     reconstruirAniosComparacion();
 
     selectorVistas.hidden = false;
-    activarVista("tabla");
+    activarVista("evolucion");
 }
 
 
@@ -2972,8 +2985,107 @@ function reconstruirBibliotecasEvolucion() {
 }
 
 
+function actualizarContextoIndicador(vista, selector) {
+    const nombre = selector.selectedOptions[0]?.textContent;
+    const cantidad = selector.options.length;
+    const contexto = document.getElementById("contexto-indicador-" + vista);
+    contexto.textContent = nombre
+        ? `Mostrando: ${nombre} · ${cantidad} ${cantidad === 1 ? "indicador" : "indicadores"} en la consulta`
+        : "";
+}
+
+
+const formatoEvolucion = document.getElementById("formato-evolucion");
+formatoEvolucion.addEventListener("change", renderizarEvolucion);
+
+function renderizarBarrasEvolucion(filas, anios) {
+    const biblioteca = bibliotecaDestacadaEvolucion;
+    if (!biblioteca) {
+        graficoEvolucionElemento.textContent = "Elige una biblioteca destacada para compararla con el grupo.";
+        return;
+    }
+
+    const grupos = anios.map(anio => {
+        const registros = filas.filter(fila => fila.Anio === anio);
+        const promedio = calcularPromedioFilas(registros);
+        const valores = registros.map(fila => obtenerNumeroValor(fila.Valor))
+            .filter(Number.isFinite).sort((a, b) => a - b);
+        const mitad = Math.floor(valores.length / 2);
+        const mediana = !valores.length ? null : valores.length % 2
+            ? valores[mitad]
+            : (valores[mitad - 1] + valores[mitad]) / 2;
+        const propio = registros.find(fila => fila.Codigo_Biblioteca_REBIUN === biblioteca);
+        return { anio, cantidad: promedio.cantidad,
+            valores: [obtenerNumeroValor(propio?.Valor), promedio.valor, mediana] };
+    });
+    const series = [mapaBibliotecas.get(biblioteca)?.Biblioteca || biblioteca, "Promedio del grupo", "Mediana del grupo"];
+    const colores = ["#78368c", "#287f92", "#73912c"];
+    const ancho = Math.max(640, anios.length * 94 + 110);
+    const svg = crearSVG(ancho, 360, "Evolución anual de la biblioteca frente al promedio y la mediana del grupo");
+    const valores = grupos.flatMap(grupo => grupo.valores).filter(Number.isFinite);
+    const minimo = Math.min(0, ...valores);
+    const maximo = Math.max(0, ...valores);
+    const { paso } = calcularEscalaAgradable(maximo - minimo);
+    const inicio = Math.floor(minimo / paso);
+    const fin = Math.max(inicio + 1, Math.ceil(maximo / paso));
+    const y = valor => 288 - (valor / paso - inicio) * 260 / (fin - inicio);
+    const anchoGrupo = (ancho - 110) / grupos.length;
+    const anchoBarra = Math.min(28, (anchoGrupo - 18) / 3);
+    for (let i = inicio; i <= fin; i += 1) {
+        const marca = i * paso;
+        agregarElementoSVG(svg, "line", { x1: 86, x2: ancho - 20, y1: y(marca), y2: y(marca), class: i === 0 ? "grafico-eje" : "grafico-guia" });
+        agregarElementoSVG(svg, "text", { x: 78, y: y(marca) + 4, "text-anchor": "end", class: "grafico-texto" }, formatearValor(marca));
+    }
+
+    const datos = document.createElement("details");
+    const resumen = document.createElement("summary");
+    resumen.textContent = "Ver valores por año";
+    const lista = document.createElement("ul");
+    grupos.forEach(({ anio, cantidad, valores }, indice) => {
+        const centro = 86 + (indice + .5) * anchoGrupo;
+        valores.forEach((valor, i) => {
+            if (!Number.isFinite(valor)) return;
+            const barra = agregarElementoSVG(svg, "rect", {
+                x: centro + (i - 1.5) * anchoBarra + 1,
+                y: Math.min(y(0), y(valor)) - (valor === 0 ? 1 : 0),
+                width: anchoBarra - 2, height: Math.max(1, Math.abs(y(valor) - y(0))),
+                fill: colores[i],
+                "data-valor-exportacion": formatearValor(valor)
+            });
+            agregarElementoSVG(barra, "title", {}, `${anio} · ${series[i]}: ${formatearValor(valor)} · ${cantidad} bibliotecas con dato`);
+        });
+        agregarElementoSVG(svg, "text", { x: centro, y: 310, "text-anchor": "middle", class: "grafico-texto" }, anio);
+        agregarElementoSVG(svg, "text", { x: centro, y: 330, "text-anchor": "middle", class: "grafico-texto" }, `n = ${cantidad}`);
+        const item = document.createElement("li");
+        item.textContent = `${anio} · ${cantidad} bibliotecas con dato · ` + valores.map((valor, i) =>
+            `${series[i]}: ${Number.isFinite(valor) ? formatearValor(valor, i ? 2 : 0) : "Sin dato"}`).join(" · ");
+        lista.append(item);
+    });
+    datos.append(resumen, lista);
+    const leyenda = document.createElement("div");
+    leyenda.className = "grafico-leyenda";
+    series.forEach((nombre, i) => {
+        const item = document.createElement("span");
+        item.className = "grafico-leyenda-item";
+        const muestra = document.createElement("span");
+        muestra.className = "grafico-leyenda-color";
+        muestra.style.backgroundColor = colores[i];
+        const etiqueta = document.createElement("span");
+        etiqueta.textContent = nombre;
+        item.append(muestra, etiqueta);
+        leyenda.append(item);
+    });
+    graficoEvolucionElemento.append(svg, leyenda, datos);
+}
+
 function renderizarEvolucion() {
 
+    document.getElementById("titulo-grafico-evolucion").textContent =
+        "Evolución · " + (indicadorEvolucionSelect.selectedOptions[0]?.textContent || "Indicador");
+    actualizarContextoIndicador("evolucion", indicadorEvolucionSelect);
+
+    mostrarPromedioEvolucion.disabled = formatoEvolucion.value === "barras";
+    mostrarPromedioEvolucion.closest("label").hidden = mostrarPromedioEvolucion.disabled;
     const codigo = indicadorEvolucionSelect.value;
     const filas = datosActuales.filter(
         fila => fila.Codigo_Tecnico === codigo
@@ -2988,7 +3100,18 @@ function renderizarEvolucion() {
         .map(fila => obtenerNumeroValor(fila.Valor))
         .filter(Number.isFinite);
 
+    const conDato = filas.filter(fila => Number.isFinite(obtenerNumeroValor(fila.Valor)));
+    const cantidadBibliotecas = new Set(conDato.map(fila => fila.Codigo_Biblioteca_REBIUN)).size;
+    const periodo = anios.length > 1 ? `${anios[0]}–${anios.at(-1)}` : anios[0];
+    document.getElementById("cobertura-evolucion").textContent = cantidadBibliotecas
+        ? `${periodo} · ${cantidadBibliotecas} ${cantidadBibliotecas === 1 ? "biblioteca" : "bibliotecas"} con dato`
+        : "";
+
     graficoEvolucionElemento.innerHTML = "";
+    const ultimoAnio = anios.at(-1);
+    mostrarMetricas("evolucion", ultimoAnio, filas.filter(f => f.Anio === ultimoAnio).map(f => ({
+        codigoBiblioteca: f.Codigo_Biblioteca_REBIUN, valor: obtenerNumeroValor(f.Valor)
+    })).filter(f => Number.isFinite(f.valor)), bibliotecaDestacadaEvolucion);
 
     if (!codigo || !anios.length || !valores.length) {
         graficoEvolucionElemento.innerHTML =
@@ -2996,9 +3119,14 @@ function renderizarEvolucion() {
         return;
     }
 
+    if (formatoEvolucion.value === "barras") {
+        renderizarBarrasEvolucion(filas, obtenerSeleccionados("anioCheck").sort());
+        return;
+    }
+
     const ancho = 900;
     const alto = 430;
-    const margen = { superior: 25, derecha: 25, inferior: 55, izquierda: 80 };
+    const margen = { superior: 25, derecha: 155, inferior: 55, izquierda: 80 };
     const anchoUtil = ancho - margen.izquierda - margen.derecha;
     const altoUtil = alto - margen.superior - margen.inferior;
     const maximo = Math.max(...valores, 0);
@@ -3058,22 +3186,19 @@ function renderizarEvolucion() {
     const leyenda = document.createElement("div");
     leyenda.className = "grafico-leyenda";
 
+    const puntosInformativos = [];
     bibliotecas.forEach(biblioteca => {
-        const color = colorBiblioteca(biblioteca);
         const filaBiblioteca = filas.find(fila => fila.Biblioteca === biblioteca);
         const codigoBiblioteca = filaBiblioteca.Codigo_Biblioteca_REBIUN;
         const nombreCompleto = mapaBibliotecas.get(codigoBiblioteca)?.Biblioteca || biblioteca;
-        const hayDestacada = Boolean(bibliotecaDestacadaEvolucion);
         const destacada = codigoBiblioteca === bibliotecaDestacadaEvolucion;
-        const colorSerie = hayDestacada && !destacada
-            ? "#BFC4C8"
-            : color;
-        const opacidadSerie = hayDestacada && !destacada ? 0.45 : 1;
-        const mapa = new Map(
-            filas
-                .filter(fila => fila.Biblioteca === biblioteca)
-                .map(fila => [fila.Anio, obtenerNumeroValor(fila.Valor)])
-        );
+        const colorSerie = destacada ? "#14636a" : "#879ba5";
+        const opacidadSerie = destacada ? 1 : 0.72;
+        const filasBiblioteca = new Map(filas
+            .filter(fila => fila.Biblioteca === biblioteca)
+            .map(fila => [fila.Anio, fila]));
+        const mapa = new Map([...filasBiblioteca].map(([anio, fila]) =>
+            [anio, obtenerNumeroValor(fila.Valor)]));
         let puntosSegmento = [];
 
         const dibujarSegmento = () => {
@@ -3082,9 +3207,7 @@ function renderizarEvolucion() {
                     points: puntosSegmento.join(" "),
                     fill: "none",
                     stroke: colorSerie,
-                    "stroke-width": hayDestacada
-                        ? destacada ? 3 : 1.25
-                        : 2,
+                    "stroke-width": destacada ? 3.5 : 1.15,
                     opacity: opacidadSerie
                 });
             }
@@ -3101,31 +3224,39 @@ function renderizarEvolucion() {
 
             const punto = `${x(anio)},${y(valor)}`;
             puntosSegmento.push(punto);
-            const circulo = agregarElementoSVG(svg, "circle", {
+            agregarElementoSVG(svg, "circle", {
                 cx: x(anio),
                 cy: y(valor),
-                r: destacada ? 4.5 : 4,
+                r: destacada ? 4.5 : 2.5,
                 fill: colorSerie,
                 stroke: "#fff",
                 "stroke-width": 1,
-                opacity: opacidadSerie
+                opacity: opacidadSerie,
+                "data-valor-destacado": destacada ? formatearValor(valor) : ""
             });
-            const titulo = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "title"
-            );
-            titulo.textContent =
-                `${tituloGraficoBiblioteca(codigoBiblioteca, nombreCompleto)}\n${anio}\nValor: ${formatearValor(valor)}`;
-            circulo.appendChild(titulo);
+            const fila = filasBiblioteca.get(anio);
+            puntosInformativos.push({
+                x: x(anio),
+                y: y(valor),
+                biblioteca: tituloGraficoBiblioteca(codigoBiblioteca, nombreCompleto),
+                anio,
+                indicador: fila.Indicador,
+                valor: formatearValor(valor),
+                destacada
+            });
         });
         dibujarSegmento();
 
+        if (!destacada) return;
+        const ultimo = anios.findLast(anio => Number.isFinite(mapa.get(anio)));
+        if (ultimo) {
+            agregarElementoSVG(svg, "text", {
+                x: x(ultimo) + 10, y: y(mapa.get(ultimo)) + 4,
+                fill: colorSerie, "font-weight": 700, "font-size": 13
+            }, `${mapaBibliotecas.get(codigoBiblioteca)?.Siglas || codigoBiblioteca} · ${formatearValor(mapa.get(ultimo))}`);
+        }
         const item = document.createElement("span");
-        item.className = "grafico-leyenda-item" + (
-            hayDestacada
-                ? destacada ? " destacada" : " atenuada"
-                : ""
-        );
+        item.className = "grafico-leyenda-item destacada";
         item.innerHTML =
             `<span class="grafico-leyenda-color" style="background:${colorSerie}"></span>` +
             `<span>${escaparHTML(etiquetaGraficoBiblioteca(codigoBiblioteca, nombreCompleto))}</span>`;
@@ -3191,19 +3322,80 @@ function renderizarEvolucion() {
         leyenda.appendChild(itemPromedio);
     }
 
+    agregarInfoPuntosEvolucion(svg, puntosInformativos);
     graficoEvolucionElemento.appendChild(svg);
     graficoEvolucionElemento.appendChild(leyenda);
 }
 
 
+
+function agregarInfoPuntosEvolucion(svg, puntos) {
+    const ficha = document.createElement("div");
+    ficha.className = "ficha-punto-evolucion";
+    ficha.hidden = true;
+    ficha.setAttribute("aria-hidden", "true");
+    graficoEvolucionElemento.appendChild(ficha);
+    const capa = agregarElementoSVG(svg, "g", { class: "puntos-interactivos" });
+    svg.setAttribute("role", "group");
+    svg.setAttribute("aria-label", "Gráfico de evolución. Usa las flechas para recorrer los puntos.");
+
+    const controles = puntos.map((punto, indice) => {
+        const { biblioteca, anio, indicador, valor } = punto;
+        const control = agregarElementoSVG(capa, "circle", {
+            cx: punto.x, cy: punto.y, r: 7,
+            class: "punto-evolucion",
+            tabindex: indice === 0 ? 0 : -1,
+            "aria-label": `${biblioteca}, ${anio}. ${indicador}: ${valor}`
+        });
+
+        const mostrar = () => {
+            const titulo = document.createElement("strong");
+            titulo.textContent = biblioteca;
+            const detalle = document.createElement("span");
+            detalle.textContent = `${anio} · ${indicador}`;
+            const cifra = document.createElement("strong");
+            cifra.textContent = valor;
+            ficha.replaceChildren(titulo, detalle, cifra);
+            ficha.hidden = false;
+            const rect = control.getBoundingClientRect();
+            ficha.style.left = Math.max(8, Math.min(rect.left + 12,
+                document.documentElement.clientWidth - ficha.offsetWidth - 8)) + "px";
+            ficha.style.top = (rect.top >= ficha.offsetHeight + 8
+                ? rect.top - ficha.offsetHeight - 6
+                : rect.bottom + 6) + "px";
+        };
+        control.addEventListener("pointerenter", mostrar);
+        control.addEventListener("pointerleave", () => {
+            if (document.activeElement !== control) ficha.hidden = true;
+        });
+        control.addEventListener("focus", mostrar);
+        control.addEventListener("blur", () => { ficha.hidden = true; });
+        control.addEventListener("keydown", evento => {
+            if (evento.key === "Escape") ficha.hidden = true;
+            const paso = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[evento.key];
+            if (!paso) return;
+            evento.preventDefault();
+            control.tabIndex = -1;
+            const siguiente = controles[(indice + paso + controles.length) % controles.length];
+            siguiente.tabIndex = 0;
+            siguiente.focus();
+        });
+        return control;
+    });
+    puntos.forEach((punto, indice) => {
+        if (punto.destacada) capa.appendChild(controles[indice]);
+    });
+}
+
 function renderizarComparacion() {
+
+    document.getElementById("titulo-grafico-comparacion").textContent =
+        "Comparación · " + (indicadorComparacionSelect.selectedOptions[0]?.textContent || "Indicador");
+    actualizarContextoIndicador("comparacion", indicadorComparacionSelect);
 
     const codigo = indicadorComparacionSelect.value;
     const anio = anioComparacionActivo;
     const normalizado = modoComparacion === "por-usuario";
-    const formatoRatio = new Intl.NumberFormat("es-ES", {
-        maximumFractionDigits: 3
-    });
     const barras = datosActuales
         .filter(fila =>
             fila.Codigo_Tecnico === codigo &&
@@ -3256,6 +3448,12 @@ function renderizarComparacion() {
 
     graficoComparacionElemento.innerHTML = "";
 
+    const anterior = destacarComparacion.value;
+    destacarComparacion.replaceChildren(new Option("Ninguna", ""), ...barras.map(barra =>
+        new Option(barra.titulo, barra.codigoBiblioteca)));
+    destacarComparacion.value = barras.some(b => b.codigoBiblioteca === anterior) ? anterior : "";
+    mostrarMetricas("comparacion", anio, barras, destacarComparacion.value);
+
     if (!codigo || !anio || !barras.length) {
         graficoComparacionElemento.innerHTML =
             normalizado
@@ -3292,6 +3490,8 @@ function renderizarComparacion() {
     const maximo = vertical ? escalaVertical.maximo : maximoReal;
     const svg = crearSVG(ancho, alto, "Gráfico de comparación entre bibliotecas");
 
+    const puesto = obtenerPuestos(barras);
+    const colorBarra = barra => barra.codigoBiblioteca === destacarComparacion.value ? "#14636a" : "#7896a8";
     if (vertical) {
         svg.style.width = `${ancho}px`;
         const paso = anchoUtil / barras.length;
@@ -3313,7 +3513,7 @@ function renderizarComparacion() {
                 y: posicionY + 4,
                 "text-anchor": "end",
                 class: "grafico-texto"
-            }, normalizado ? formatoRatio.format(valor) : formatearValor(valor));
+            }, formatearValor(valor));
         }
         agregarElementoSVG(svg, "line", {
             x1: margen.izquierda,
@@ -3332,22 +3532,20 @@ function renderizarComparacion() {
                 y: posicionY,
                 width: anchoBarra,
                 height: alturaBarra,
-                fill: "#7896A8"
+                fill: colorBarra(barra)
             });
             const titulo = document.createElementNS(
                 "http://www.w3.org/2000/svg", "title"
             );
             titulo.textContent =
-                `${barra.titulo}\n${anio}\nValor: ${normalizado
-                    ? formatoRatio.format(barra.valor)
-                    : formatearValor(barra.valor)}`;
+                `${barra.titulo}\n${anio}\nValor: ${formatearValor(barra.valor)}`;
             rect.appendChild(titulo);
             agregarElementoSVG(svg, "text", {
                 x: centroX,
                 y: Math.max(22, posicionY - 7),
                 "text-anchor": "middle",
-                class: "grafico-texto"
-            }, normalizado ? formatoRatio.format(barra.valor) : formatearValor(barra.valor));
+                class: "grafico-texto valor-barra-comparacion"
+            }, formatearValor(barra.valor));
             const etiqueta = agregarElementoSVG(svg, "text", {
                 x: centroX,
                 y: alto - margen.inferior + 18,
@@ -3366,35 +3564,38 @@ function renderizarComparacion() {
     barras.forEach((barra, indice) => {
         const posicionY = margen.superior + indice * altoFila;
         const anchoBarra = barra.valor * anchoUtil / maximo;
+        const destacada = barra.codigoBiblioteca === destacarComparacion.value;
+        if (destacada) {
+            agregarElementoSVG(svg, "rect", {
+                x: 0, y: posicionY, width: ancho, height: altoFila, fill: "#e2f1f1"
+            });
+        }
 
         agregarElementoSVG(svg, "text", {
             x: margen.izquierda - 8,
             y: posicionY + 17,
             "text-anchor": "end",
-            class: "grafico-texto grafico-etiqueta-barra"
-        }, barra.etiqueta);
+            class: "grafico-texto grafico-etiqueta-barra",
+            "font-weight": destacada ? 700 : 400
+        }, `${puesto.get(barra.codigoBiblioteca)}. ${barra.etiqueta}`);
         const rect = agregarElementoSVG(svg, "rect", {
             x: margen.izquierda,
             y: posicionY + 3,
             width: Math.max(0, anchoBarra),
             height: 18,
-            fill: "#7896A8"
+            fill: colorBarra(barra)
         });
         const titulo = document.createElementNS(
             "http://www.w3.org/2000/svg", "title"
         );
         titulo.textContent =
-            `${barra.titulo}\n${anio}\nValor: ${normalizado
-                ? formatoRatio.format(barra.valor)
-                : formatearValor(barra.valor)}`;
+            `${barra.titulo}\n${anio}\nValor: ${formatearValor(barra.valor)}`;
         rect.appendChild(titulo);
         agregarElementoSVG(svg, "text", {
             x: margen.izquierda + anchoBarra + 7,
             y: posicionY + 17,
-            class: "grafico-texto"
-        }, normalizado
-            ? formatoRatio.format(barra.valor)
-            : formatearValor(barra.valor));
+            class: "grafico-texto valor-barra-comparacion"
+        }, formatearValor(barra.valor));
     });
     }
 
@@ -3402,7 +3603,7 @@ function renderizarComparacion() {
         barras.map(barra => ({ Valor: barra.valor }))
     );
 
-    if (Number.isFinite(promedio.valor)) {
+    if (mostrarPromedioComparacion.checked && Number.isFinite(promedio.valor)) {
         const posicionPromedio = vertical
             ? margen.superior + altoUtil - promedio.valor * altoUtil / maximo
             : margen.izquierda + promedio.valor * anchoUtil / maximo;
@@ -3429,9 +3630,7 @@ function renderizarComparacion() {
                 : etiquetaALaDerecha ? "start" : "end",
             class: "grafico-texto grafico-etiqueta-promedio",
             fill: colorPromedio
-        }, `Promedio de bibliotecas seleccionadas: ${normalizado
-            ? formatoRatio.format(promedio.valor)
-            : formatearValor(promedio.valor)}`);
+        }, `Promedio de bibliotecas seleccionadas: ${formatearValor(promedio.valor)}`);
     }
 
     graficoComparacionElemento.appendChild(svg);
@@ -3457,11 +3656,64 @@ function cerrarMenusDescarga(excepto = null) {
 }
 
 
+function obtenerContenedorGrafico(tipoVista) {
+    return document.getElementById("grafico-" + tipoVista);
+}
+
+function incluirValoresExportacion(tipoVista) {
+    return document.getElementById(`valores-exportacion-${tipoVista}`).checked;
+}
+
+function rotularValoresExportacion(svg, tipoVista) {
+    if (!incluirValoresExportacion(tipoVista)) {
+        svg.querySelectorAll(".valor-barra-comparacion").forEach(etiqueta => etiqueta.remove());
+        return;
+    }
+
+    const destacados = [...svg.querySelectorAll('[data-valor-destacado]:not([data-valor-destacado=""])')];
+    // La gráfica de líneas ya etiqueta el último punto destacado.
+    if (destacados.length <= 5) {
+        for (const punto of destacados.slice(0, -1)) {
+            agregarElementoSVG(svg, "text", {
+                x: punto.getAttribute("cx"), y: Math.max(12, Number(punto.getAttribute("cy")) - 9),
+                "text-anchor": "middle", class: "valor-exportacion"
+            }, punto.dataset.valorDestacado);
+        }
+    }
+
+    for (const marca of svg.querySelectorAll("[data-valor-exportacion]")) {
+        const valor = marca.dataset.valorExportacion;
+        if (marca.tagName === "rect") {
+            const x = Number(marca.getAttribute("x")) + Number(marca.getAttribute("width")) / 2;
+            const y = Number(marca.getAttribute("y"));
+            const dentro = Number(marca.getAttribute("height")) > valor.length * 6 + 12;
+            const origen = y + (dentro ? 6 : -4);
+            agregarElementoSVG(svg, "text", {
+                x, y: origen, transform: `rotate(-90 ${x} ${origen})`,
+                "text-anchor": dentro ? "end" : "start",
+                "dominant-baseline": "central",
+                class: dentro ? "valor-exportacion valor-exportacion-interior" : "valor-exportacion"
+            }, valor);
+        } else {
+            agregarElementoSVG(svg, "text", {
+                x: marca.getAttribute("cx"), y: Math.max(12, Number(marca.getAttribute("cy")) - 9),
+                "text-anchor": "middle", class: "valor-exportacion"
+            }, valor);
+        }
+    }
+}
+
+function periodoExportacion(tipoVista) {
+    if (tipoVista === "comparacion") {
+        return `${anioComparacionActivo}${modoComparacion === "por-usuario" ? " · Por persona usuaria propia" : ""}`;
+    }
+    const anios = obtenerSeleccionados("anioCheck").sort();
+    return anios.join(", ");
+}
+
 function svgExportable(tipoVista) {
 
-    const contenedor = tipoVista === "evolucion"
-        ? graficoEvolucionElemento
-        : graficoComparacionElemento;
+    const contenedor = obtenerContenedorGrafico(tipoVista);
     const original = contenedor.querySelector("svg");
 
     if (!original) {
@@ -3469,6 +3721,8 @@ function svgExportable(tipoVista) {
     }
 
     const clon = original.cloneNode(true);
+    clon.querySelector(".puntos-interactivos")?.remove();
+    rotularValoresExportacion(clon, tipoVista);
     const partesVista = clon.getAttribute("viewBox")
         .split(/\s+/)
         .map(Number);
@@ -3483,6 +3737,8 @@ function svgExportable(tipoVista) {
         ".grafico-texto{fill:#333;font:12px 'Segoe UI',Arial,sans-serif}" +
         ".grafico-etiqueta-barra{font-size:11px}" +
         ".grafico-etiqueta-promedio{fill:#8E9797;font-size:11px;font-weight:500}" +
+        ".valor-exportacion{fill:#142841;font:600 10px Arial,sans-serif}" +
+        ".valor-exportacion-interior{fill:#fff}" +
         ".grafico-eje{stroke:#899796;stroke-width:1}" +
         ".grafico-guia{stroke:#e4ebea;stroke-width:1}";
     clon.insertBefore(estilo, clon.firstChild);
@@ -3572,6 +3828,32 @@ function svgExportable(tipoVista) {
         alto += 30;
     }
 
+    const indicador = document.getElementById("indicador-" + tipoVista);
+    const nombreIndicador = indicador.selectedOptions[0]?.textContent || "";
+    agregarElementoSVG(clon, "text", {
+        x: 16, y: alto + 19, class: "grafico-texto"
+    }, nombreIndicador);
+    agregarElementoSVG(clon, "text", {
+        x: 16, y: alto + 37, class: "grafico-texto"
+    }, `${periodoExportacion(tipoVista)} · Fuente: Estadísticas REBIUN`);
+    alto += 48;
+    if (tipoVista === "proyeccion") {
+        const biblioteca = bibliotecaProyeccion.selectedOptions[0]?.textContent || "";
+        const metodo = metodoProyeccion.selectedOptions[0]?.textContent || "";
+        agregarElementoSVG(clon, "text", {
+            x: 16, y: alto + 10, class: "grafico-texto"
+        }, `${biblioteca} · ${metodo} · Intervalo estimado del ${nivelProyeccion.value} %`);
+        alto += 22;
+        if (incluirValoresExportacion(tipoVista)) {
+            for (const rango of document.querySelectorAll("#rangos-proyeccion li")) {
+                agregarElementoSVG(clon, "text", {
+                    x: 16, y: alto + 10, class: "grafico-texto"
+                }, rango.textContent);
+                alto += 18;
+            }
+        }
+    }
+
     clon.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
     clon.setAttribute("width", String(ancho));
     clon.setAttribute("height", String(alto));
@@ -3593,9 +3875,7 @@ function svgExportable(tipoVista) {
 
 function nombreArchivoGrafico(tipoVista, extension) {
 
-    const codigo = tipoVista === "evolucion"
-        ? indicadorEvolucionSelect.value
-        : indicadorComparacionSelect.value;
+    const codigo = document.getElementById("indicador-" + tipoVista).value;
     const fecha = new Date().toISOString().slice(0, 10);
     const partes = ["REBIUN", tipoVista, codigo];
 
@@ -3631,7 +3911,7 @@ function descargarGraficoPNG(tipoVista) {
     const imagen = new Image();
 
     imagen.onload = () => {
-        const escala = 2;
+        const escala = Math.min(2, 4096 / Math.max(exportacion.ancho, exportacion.alto));
         const canvas = document.createElement("canvas");
         canvas.width = Math.ceil(exportacion.ancho * escala);
         canvas.height = Math.ceil(exportacion.alto * escala);
@@ -3665,16 +3945,10 @@ function descargarGraficoPNG(tipoVista) {
 
 function prepararImpresionGrafico(tipoVista) {
 
-    const esEvolucion = tipoVista === "evolucion";
-    const selectorIndicador = esEvolucion
-        ? indicadorEvolucionSelect
-        : indicadorComparacionSelect;
-    const contenedor = esEvolucion
-        ? graficoEvolucionElemento
-        : graficoComparacionElemento;
-    const titulo = esEvolucion
-        ? "Evolución"
-        : "Comparación";
+    const selectorIndicador = document.getElementById("indicador-" + tipoVista);
+    const contenedor = obtenerContenedorGrafico(tipoVista);
+    if (!contenedor.querySelector("svg")) return;
+    const titulo = document.getElementById("pestana-" + tipoVista).textContent.trim();
 
     vistaImpresionGrafico.innerHTML = "";
 
@@ -3685,14 +3959,30 @@ function prepararImpresionGrafico(tipoVista) {
     const metadatos = document.createElement("div");
     metadatos.className = "metadatos-impresion";
     metadatos.textContent =
-        `Indicador: ${selectorIndicador.selectedOptions[0]?.textContent || ""}` +
-        (esEvolucion ? "" : ` · Año: ${anioComparacionActivo}`) +
-        (!esEvolucion && modoComparacion === "por-usuario"
-            ? " · Por persona usuaria propia"
-            : "");
+        `Indicador: ${selectorIndicador.selectedOptions[0]?.textContent || ""} · ${periodoExportacion(tipoVista)}`;
+    if (tipoVista === "proyeccion") {
+        metadatos.textContent += ` · ${bibliotecaProyeccion.selectedOptions[0]?.textContent || ""}`;
+    }
     vistaImpresionGrafico.appendChild(metadatos);
 
-    vistaImpresionGrafico.appendChild(contenedor.cloneNode(true));
+    if (tipoVista === "proyeccion") {
+        for (const id of ["resultado-proyeccion", "banda-proyeccion", "rangos-proyeccion"].filter(id =>
+            id !== "rangos-proyeccion" || incluirValoresExportacion(tipoVista))) {
+            const detalle = document.getElementById(id).cloneNode(true);
+            detalle.removeAttribute("id");
+            vistaImpresionGrafico.appendChild(detalle);
+        }
+    }
+    const copiaGrafico = contenedor.cloneNode(true);
+    copiaGrafico.removeAttribute("id");
+    copiaGrafico.querySelector(".puntos-interactivos")?.remove();
+    rotularValoresExportacion(copiaGrafico.querySelector("svg"), tipoVista);
+    const detalleAnual = copiaGrafico.querySelector("details");
+    if (detalleAnual) {
+        if (incluirValoresExportacion(tipoVista)) detalleAnual.open = true;
+        else detalleAnual.remove();
+    }
+    vistaImpresionGrafico.appendChild(copiaGrafico);
 
     const fuente = document.createElement("div");
     fuente.className = "fuente-grafico";
@@ -3716,6 +4006,18 @@ function prepararImpresionGrafico(tipoVista) {
 document
     .querySelectorAll("[data-menu-descarga]")
     .forEach(boton => {
+        const vista = boton.dataset.menuDescarga;
+        const grafico = obtenerContenedorGrafico(vista);
+        const actualizarDisponibilidad = () => {
+            boton.disabled = !grafico.querySelector("svg");
+            boton.title = boton.disabled ? "No hay un gráfico para descargar" : "Descargar gráfico";
+            if (boton.disabled && boton.getAttribute("aria-expanded") === "true") {
+                cerrarMenusDescarga();
+            }
+        };
+        new MutationObserver(actualizarDisponibilidad).observe(grafico, { childList: true });
+        actualizarDisponibilidad();
+
         boton.addEventListener("click", evento => {
             evento.stopPropagation();
             const menu = document.querySelector(
@@ -4370,7 +4672,7 @@ function generarTabla() {
 
         `${bibliotecasCompatibles.length} biblioteca(s) · ` +
 
-        `${indicadores.length} indicador(es)`;
+        `${indicadores.length} ${indicadores.length === 1 ? "indicador en la consulta" : "indicadores en la consulta"}`;
 
 
     datosActuales =
@@ -4388,7 +4690,7 @@ function generarTabla() {
    ========================================================= */
 
 
-function formatearValor(valor) {
+function formatearValor(valor, minimumFractionDigits = 0) {
 
     if (
         valor === null ||
@@ -4430,12 +4732,15 @@ function formatearValor(valor) {
     }
 
 
-    return numero.toLocaleString(
-        "es-ES",
-        {
-            maximumFractionDigits: 4
-        }
-    );
+    const magnitud = Math.abs(numero);
+    const maximumFractionDigits = magnitud > 0 && magnitud < 0.005
+        ? Math.max(3, Math.ceil(-Math.log10(magnitud)))
+        : 2;
+    return numero.toLocaleString("es-ES", {
+        minimumFractionDigits,
+        maximumFractionDigits: Math.min(maximumFractionDigits, 100),
+        ...(maximumFractionDigits > 100 ? { notation: "scientific", maximumFractionDigits: 2 } : {})
+    });
 }
 
 
@@ -4594,3 +4899,301 @@ function descargarCSV() {
 
 
 
+
+
+/* Controles de presentación de la prueba visual. */
+const panelSeleccion = document.getElementById("panel-seleccion");
+const alternarSeleccion = document.getElementById("alternar-seleccion");
+const aplicarSeleccion = document.getElementById("aplicar-seleccion");
+
+alternarSeleccion.addEventListener("click", () => {
+    panelSeleccion.hidden = !panelSeleccion.hidden;
+    const accion = panelSeleccion.hidden ? "Mostrar" : "Ocultar";
+    alternarSeleccion.textContent = accion + " bibliotecas";
+    alternarSeleccion.setAttribute("aria-expanded", String(!panelSeleccion.hidden));
+    alternarSeleccion.setAttribute("aria-label", accion + " panel de bibliotecas");
+});
+
+document.querySelectorAll(".acordeon").forEach(boton => {
+    boton.addEventListener("click", () => {
+        const contenido = document.getElementById(boton.getAttribute("aria-controls"));
+        contenido.hidden = !contenido.hidden;
+        boton.setAttribute("aria-expanded", String(!contenido.hidden));
+    });
+});
+
+function mostrarSeleccionActual() {
+    const bibliotecas = obtenerSeleccionados("bibliotecaCheck").length;
+    const anios = obtenerSeleccionados("anioCheck").sort();
+    const indicadores = obtenerSeleccionados("indicadorCheck").length;
+    const rango = anios.length > 1 ? anios[0] + "–" + anios.at(-1) + " · " : "";
+    document.getElementById("detalle-bibliotecas").textContent = bibliotecas + " seleccionadas";
+    document.getElementById("detalle-anios").textContent = rango + anios.length + " seleccionados";
+    const resumen = bibliotecas + " bibliotecas · " + anios.length + " años · " +
+        indicadores + (indicadores === 1 ? " indicador" : " indicadores");
+    const barra = document.getElementById("seleccion-actual");
+    if (barra.textContent !== resumen) {
+        barra.textContent = resumen;
+    }
+    aplicarSeleccion.disabled = botonGenerar.disabled;
+}
+
+const cambiosSeleccion = new MutationObserver(mostrarSeleccionActual);
+for (const grupo of ["bibliotecas", "anios", "indicadores"]) {
+    cambiosSeleccion.observe(document.getElementById("contador-" + grupo), { childList: true });
+}
+cambiosSeleccion.observe(botonGenerar, { attributes: true, attributeFilter: ["disabled"] });
+aplicarSeleccion.addEventListener("click", () => {
+    botonGenerar.click();
+    if (!selectorVistas.hidden) {
+        document.getElementById("pestana-evolucion").focus();
+    }
+});
+
+
+document.querySelectorAll("[data-menu]").forEach(menu => {
+    const boton = document.querySelector(`[data-menu-descarga="${menu.dataset.menu}"]`);
+    menu.addEventListener("keydown", evento => {
+        if (evento.key === "Escape") {
+            cerrarMenusDescarga();
+            boton.focus();
+        }
+    });
+    menu.addEventListener("click", evento => {
+        if (evento.target.closest("[data-descarga]")) {
+            boton.focus();
+        }
+    });
+});
+
+const destacarComparacion = document.getElementById("destacar-comparacion");
+destacarComparacion.addEventListener("change", renderizarComparacion);
+
+function obtenerPuestos(filas) {
+    const porValor = [...filas].sort((a, b) => b.valor - a.valor);
+    let puesto = 0;
+    return new Map(porValor.map((fila, indice) => {
+        if (indice === 0 || fila.valor !== porValor[indice - 1].valor) puesto = indice + 1;
+        return [fila.codigoBiblioteca, puesto];
+    }));
+}
+
+function mostrarMetricas(vista, anio, filas, destacada) {
+    const contenedor = document.getElementById("metricas-" + vista);
+    contenedor.replaceChildren();
+    contenedor.hidden = !filas.length;
+    if (!filas.length) return;
+    const valores = filas.map(f => f.valor).sort((a, b) => a - b);
+    const mitad = Math.floor(valores.length / 2);
+    const mediana = valores.length % 2 ? valores[mitad] : (valores[mitad - 1] + valores[mitad]) / 2;
+    const promedio = valores.reduce((total, valor) => total + valor, 0) / valores.length;
+    const datos = [
+        [`Bibliotecas con dato · ${anio}`, filas.length],
+        [`Mediana · ${anio}`, formatearValor(mediana, 2)],
+        [`Promedio · ${anio}`, formatearValor(promedio, 2)]
+    ];
+    const puesto = obtenerPuestos(filas).get(destacada);
+    if (puesto) datos.push(["Posición de la destacada", `${puesto} de ${filas.length}`]);
+    for (const [nombre, valor] of datos) {
+        const item = document.createElement("div");
+        const etiqueta = document.createElement("span");
+        const cifra = document.createElement("strong");
+        etiqueta.textContent = nombre;
+        cifra.textContent = valor;
+        item.append(etiqueta, cifra);
+        contenedor.append(item);
+    }
+}
+
+const indicadorProyeccion = document.getElementById("indicador-proyeccion");
+const bibliotecaProyeccion = document.getElementById("biblioteca-proyeccion");
+const periodoProyeccion = document.getElementById("periodo-proyeccion");
+const horizonteProyeccion = document.getElementById("horizonte-proyeccion");
+const nivelProyeccion = document.getElementById("nivel-proyeccion");
+const metodoProyeccion = document.getElementById("metodo-proyeccion");
+
+function cargarBibliotecasProyeccion() {
+    const anterior = bibliotecaProyeccion.value;
+    const bibliotecas = new Map(datosActuales
+        .filter(fila => fila.Codigo_Tecnico === indicadorProyeccion.value)
+        .map(fila => [fila.Codigo_Biblioteca_REBIUN, fila.Biblioteca]));
+    bibliotecaProyeccion.replaceChildren(...[...bibliotecas]
+        .sort((a, b) => a[1].localeCompare(b[1], "es", { numeric: true }))
+        .map(([codigo, nombre]) => new Option(nombre, codigo)));
+    if (bibliotecas.has(anterior)) bibliotecaProyeccion.value = anterior;
+}
+
+indicadorProyeccion.addEventListener("change", () => {
+    cargarBibliotecasProyeccion();
+    renderizarProyeccion();
+});
+for (const control of [bibliotecaProyeccion, periodoProyeccion, horizonteProyeccion, nivelProyeccion, metodoProyeccion]) {
+    control.addEventListener("change", renderizarProyeccion);
+}
+
+function estimarProyeccion(puntos, anio, metodo) {
+    if (metodo === "ultimo") return puntos.at(-1).valor;
+    const centro = puntos[0].anio;
+    const mediaX = puntos.reduce((suma, p) => suma + p.anio - centro, 0) / puntos.length;
+    const mediaY = puntos.reduce((suma, p) => suma + p.valor, 0) / puntos.length;
+    const sumas = puntos.reduce(([xy, xx], p) => {
+        const x = p.anio - centro - mediaX;
+        return [xy + x * (p.valor - mediaY), xx + x * x];
+    }, [0, 0]);
+    return mediaY + sumas[0] / sumas[1] * (anio - centro - mediaX);
+}
+
+// Cuantiles bilaterales de Student para las series anuales del prototipo.
+const cuantilesProyeccion = {
+    80: [3.078, 1.886, 1.638, 1.533, 1.476, 1.440, 1.415, 1.397, 1.383],
+    95: [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262]
+};
+
+function calcularIntervaloProyeccion(puntos, metodo, nivel) {
+    const n = puntos.length;
+    const ultimo = puntos.at(-1).anio;
+    const lineal = metodo === "lineal";
+    const grados = n - (lineal ? 2 : 1);
+    const cuantiles = cuantilesProyeccion[nivel];
+    // Para series más largas, el último cuantil tabulado es conservador.
+    const critico = cuantiles[Math.min(grados, cuantiles.length) - 1];
+
+    if (!lineal) {
+        const variacion = puntos.slice(1).reduce((suma, punto, i) => {
+            const anterior = puntos[i];
+            return suma + (punto.valor - anterior.valor) ** 2 / (punto.anio - anterior.anio);
+        }, 0);
+        return anio => critico * Math.sqrt(variacion / grados * (anio - ultimo));
+    }
+
+    const media = puntos.reduce((suma, punto) => suma + punto.anio, 0) / n;
+    const dispersion = puntos.reduce((suma, punto) => suma + (punto.anio - media) ** 2, 0);
+    const residuos = puntos.reduce((suma, punto) =>
+        suma + (punto.valor - estimarProyeccion(puntos, punto.anio, metodo)) ** 2, 0);
+    return anio => critico * Math.sqrt(residuos / grados *
+        (1 + 1 / n + (anio - media) ** 2 / dispersion));
+}
+
+function renderizarProyeccion() {
+    const resultado = document.getElementById("resultado-proyeccion");
+    const grafico = document.getElementById("grafico-proyeccion");
+    const validacion = document.getElementById("validacion-proyeccion");
+    const banda = document.getElementById("banda-proyeccion");
+    const rangos = document.getElementById("rangos-proyeccion");
+    grafico.replaceChildren();
+    grafico.hidden = true;
+    banda.hidden = true;
+    rangos.replaceChildren();
+    validacion.textContent = "";
+
+    const serie = datosActuales.filter(fila =>
+        fila.Codigo_Tecnico === indicadorProyeccion.value &&
+        fila.Codigo_Biblioteca_REBIUN === bibliotecaProyeccion.value
+    ).map(fila => ({ anio: Number(fila.Anio), valor: obtenerNumeroValor(fila.Valor) }))
+        .filter(p => Number.isFinite(p.valor))
+        .sort((a, b) => a.anio - b.anio);
+    const corte = Math.max(...new Set(datosActuales.map(fila => Number(fila.Anio))));
+    const ventana = (puntos, fin) => periodoProyeccion.value === "reciente"
+        ? puntos.filter(p => p.anio >= fin - 3)
+        : puntos;
+    const puntos = ventana(serie, corte);
+    if (puntos.length < 3 || puntos.at(-1)?.anio !== corte) {
+        resultado.textContent = "Datos insuficientes. Se necesitan tres observaciones y un valor en el último año de la consulta.";
+        return;
+    }
+
+    const horizonte = Number(horizonteProyeccion.value);
+    const anio = corte + horizonte;
+    const metodo = metodoProyeccion.value;
+    const nivel = nivelProyeccion.value;
+    const margen = calcularIntervaloProyeccion(puntos, metodo, nivel);
+    const futuros = Array.from({ length: horizonte }, (_, i) => {
+        const anio = corte + i + 1;
+        const valor = estimarProyeccion(puntos, anio, metodo);
+        const amplitud = margen(anio);
+        return { anio, valor, inferior: valor - amplitud, superior: valor + amplitud };
+    });
+    const valor = futuros.at(-1).valor;
+    resultado.textContent = `Proyección ${anio}: ${formatearValor(valor)} · ${metodoProyeccion.selectedOptions[0].textContent} · ${puntos.length} observaciones de ${puntos[0].anio} a ${corte}`;
+    for (const p of futuros) {
+        const item = document.createElement("li");
+        item.textContent = `${p.anio}: de ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`;
+        rangos.append(item);
+    }
+
+    const pruebas = serie.filter(p => p.anio === corte || p.anio === corte - 1)
+        .map(p => ({ ...p, previos: ventana(serie.filter(q => q.anio <= p.anio - horizonte), p.anio - horizonte) }))
+        .filter(p => p.previos.length >= 3 && p.previos.at(-1).anio === p.anio - horizonte);
+    if (pruebas.length) {
+        const error = metodo => formatearValor(pruebas.reduce((suma, p) =>
+            suma + Math.abs(estimarProyeccion(p.previos, p.anio, metodo) - p.valor), 0) / pruebas.length);
+        const duracion = horizonte === 1 ? "1 año" : `${horizonte} años`;
+        const casos = pruebas.length === 1 ? "1 predicción verificada" : `${pruebas.length} predicciones verificadas`;
+        const anios = pruebas.map(p => p.anio).join(", ");
+        const cortes = pruebas.map(p => `${p.anio} con datos hasta ${p.anio - horizonte}`).join(" y ");
+        const desviacion = pruebas.length === 1 ? "Desviación" : "Desviación media";
+        validacion.textContent = `Prueba histórica a ${duracion} · ${casos} (${anios}). ` +
+            `${desviacion} en las unidades del indicador: tendencia lineal ${error("lineal")} · último valor ${error("ultimo")}. ` +
+            `Se estimó ${cortes}.`;
+    } else {
+        validacion.textContent = "No hay suficientes datos para evaluar este horizonte.";
+    }
+
+    const minimo = Math.min(0, ...futuros.map(p => p.inferior), ...puntos.map(p => p.valor));
+    const maximo = Math.max(0, ...futuros.map(p => p.superior), ...puntos.map(p => p.valor));
+    const { paso } = calcularEscalaAgradable(maximo - minimo);
+    const primeraMarca = Math.floor(minimo / paso);
+    const ultimaMarca = Math.max(primeraMarca + 1, Math.ceil(maximo / paso));
+    const x = anioPunto => 88 + (anioPunto - puntos[0].anio) * 740 / (anio - puntos[0].anio);
+    const y = valorPunto => 275 - (valorPunto / paso - primeraMarca) * 242 / (ultimaMarca - primeraMarca);
+    const svg = crearSVG(900, 320, resultado.textContent);
+    for (let i = primeraMarca; i <= ultimaMarca; i += 1) {
+        const marca = i * paso;
+        agregarElementoSVG(svg, "line", { x1: 88, x2: 855, y1: y(marca), y2: y(marca), class: "grafico-guia" });
+        agregarElementoSVG(svg, "text", { x: 78, y: y(marca) + 4, "text-anchor": "end", class: "grafico-texto" }, formatearValor(marca));
+    }
+    for (let n = puntos[0].anio; n <= anio; n += 1) {
+        agregarElementoSVG(svg, "text", { x: x(n), y: 302, "text-anchor": "middle", class: "grafico-texto" }, String(n));
+    }
+    puntos.forEach((p, i) => {
+        const anterior = puntos[i - 1];
+        if (anterior?.anio === p.anio - 1) {
+            agregarElementoSVG(svg, "line", { x1: x(anterior.anio), y1: y(anterior.valor), x2: x(p.anio), y2: y(p.valor), stroke: "#14636a", "stroke-width": 2.5 });
+        }
+        const punto = agregarElementoSVG(svg, "circle", { cx: x(p.anio), cy: y(p.valor), r: 4, fill: "#14636a" });
+        agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}`);
+    });
+    const origen = `${x(corte)},${y(puntos.at(-1).valor)}`;
+    const coordenada = (p, campo) => `${x(p.anio)},${y(p[campo])}`;
+    agregarElementoSVG(svg, "polygon", {
+        points: [origen, ...futuros.map(p => coordenada(p, "superior")),
+            ...futuros.slice().reverse().map(p => coordenada(p, "inferior"))].join(" "),
+        fill: "#aad9da", "fill-opacity": .65
+    });
+    agregarElementoSVG(svg, "polyline", {
+        points: [origen, ...futuros.map(p => coordenada(p, "valor"))].join(" "),
+        fill: "none", stroke: "#14636a", "stroke-width": 2.5, "stroke-dasharray": "6 5"
+    });
+    for (const p of futuros) {
+        const punto = agregarElementoSVG(svg, "circle", {
+            cx: x(p.anio), cy: y(p.valor), r: 5, fill: "#fff", stroke: "#14636a", "stroke-width": 2,
+            "data-valor-exportacion": formatearValor(p.valor)
+        });
+        agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}. Intervalo: ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`);
+    }
+    banda.lastChild.textContent = ` La línea discontinua muestra la proyección. La banda sombreada indica el intervalo de predicción estimado del ${nivel} % para cada año. Los valores reales pueden quedar fuera.`;
+    banda.hidden = false;
+    grafico.append(svg);
+    grafico.hidden = false;
+}
+
+const mostrarPromedioComparacion = document.getElementById("mostrar-promedio-comparacion");
+mostrarPromedioComparacion.addEventListener("change", renderizarComparacion);
+
+document.querySelectorAll(".boton-opciones-grafico").forEach(boton => {
+    const panel = document.getElementById(boton.getAttribute("aria-controls"));
+    boton.addEventListener("click", () => {
+        panel.hidden = !panel.hidden;
+        boton.setAttribute("aria-expanded", String(!panel.hidden));
+    });
+});
