@@ -3907,18 +3907,6 @@ function integrarContextoProyeccionPNG(svg, ancho, alto) {
                 "text-anchor": "middle", class: "valor-exportacion"
             }, punto.dataset.valorObservado);
         }
-        for (const punto of trazado.querySelectorAll("[data-valor-exportacion]")) {
-            const centro = Number(punto.getAttribute("cy"));
-            for (const [valor, posicion] of [
-                [punto.dataset.limiteSuperior, Math.min(Number(punto.dataset.ySuperior) - 8, centro - 23)],
-                [punto.dataset.limiteInferior, Number(punto.dataset.yInferior) + 14]
-            ]) {
-                agregarElementoSVG(trazado, "text", {
-                    x: punto.getAttribute("cx"), y: posicion,
-                    "text-anchor": "middle", fill: "#315761", "font-size": 10, "font-family": "Arial, sans-serif"
-                }, valor);
-            }
-        }
     }
 
     return alto + cursor - 4;
@@ -5233,9 +5221,7 @@ function renderizarProyeccion() {
     for (const p of futuros) {
         const punto = agregarElementoSVG(svg, "circle", {
             cx: x(p.anio), cy: y(p.valor), r: 5, fill: "#fff", stroke: "#14636a", "stroke-width": 2,
-            "data-valor-exportacion": formatearValor(p.valor),
-            "data-limite-superior": formatearValor(p.superior), "data-y-superior": y(p.superior),
-            "data-limite-inferior": formatearValor(p.inferior), "data-y-inferior": y(p.inferior)
+            "data-valor-exportacion": formatearValor(p.valor)
         });
         agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}. Intervalo: ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`);
     }
