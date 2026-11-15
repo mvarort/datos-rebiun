@@ -3838,20 +3838,7 @@ function svgExportable(tipoVista) {
     }, `${periodoExportacion(tipoVista)} · Fuente: Estadísticas REBIUN`);
     alto += 48;
     if (tipoVista === "proyeccion") {
-        const biblioteca = bibliotecaProyeccion.selectedOptions[0]?.textContent || "";
-        const metodo = metodoProyeccion.selectedOptions[0]?.textContent || "";
-        agregarElementoSVG(clon, "text", {
-            x: 16, y: alto + 10, class: "grafico-texto"
-        }, `${biblioteca} · ${metodo} · Intervalo estimado del ${nivelProyeccion.value} %`);
-        alto += 22;
-        if (incluirValoresExportacion(tipoVista)) {
-            for (const rango of document.querySelectorAll("#rangos-proyeccion li")) {
-                agregarElementoSVG(clon, "text", {
-                    x: 16, y: alto + 10, class: "grafico-texto"
-                }, rango.textContent);
-                alto += 18;
-            }
-        }
+        alto = anexarDatosProyeccionPNG(clon, original, ancho, alto);
     }
 
     clon.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
@@ -3870,6 +3857,65 @@ function svgExportable(tipoVista) {
     clon.insertBefore(fondo, clon.firstChild);
 
     return { svg: clon, ancho, alto };
+}
+
+
+function anexarDatosProyeccionPNG(svg, original, ancho, alto) {
+    const { observaciones, futuros } = datosExportacionProyeccion.get(original);
+    const texto = (valor, x = 16, negrita = false) => agregarElementoSVG(svg, "text", {
+        x, y: alto, class: "grafico-texto", style: negrita ? "font-weight:700" : ""
+    }, valor);
+
+    const biblioteca = bibliotecaProyeccion.selectedOptions[0]?.textContent || "";
+    const metodo = metodoProyeccion.selectedOptions[0]?.textContent || "";
+    const periodo = periodoProyeccion.selectedOptions[0]?.textContent || "";
+    alto += 6;
+    texto(biblioteca, 16, true);
+    alto += 18;
+    texto(`${metodo} · ${periodo} · Horizonte: ${horizonteProyeccion.value} ${horizonteProyeccion.value === "1" ? "año" : "años"} · Intervalo estimado del ${nivelProyeccion.value} %`);
+
+    alto += 26;
+    texto("Serie observada de la consulta", 16, true);
+    alto += 20;
+    ["Año", "Valor observado", "Usado para proyectar"].forEach((valor, i) => texto(valor, [16, 110, 300][i], true));
+    for (const { anio, valor, usado } of observaciones) {
+        alto += 16;
+        texto(String(anio));
+        texto(valor === null ? "Sin dato" : formatearValor(valor), 110);
+        texto(usado ? "Sí" : "No", 300);
+    }
+
+    alto += 26;
+    texto("Proyección por año", 16, true);
+    alto += 20;
+    ["Año", "Valor proyectado", "Límite inferior", "Límite superior"].forEach((valor, i) => texto(valor, [16, 110, 300, 490][i], true));
+    for (const { anio, valor, inferior, superior } of futuros) {
+        alto += 16;
+        texto(String(anio));
+        texto(formatearValor(valor), 110);
+        texto(formatearValor(inferior), 300);
+        texto(formatearValor(superior), 490);
+    }
+
+    alto += 26;
+    texto("Prueba histórica", 16, true);
+    const medida = document.createElement("canvas").getContext("2d");
+    medida.font = "12px 'Segoe UI', Arial, sans-serif";
+    const palabras = document.getElementById("validacion-proyeccion").textContent.split(/\s+/);
+    let linea = "";
+    for (const palabra of palabras) {
+        const candidata = linea ? `${linea} ${palabra}` : palabra;
+        if (linea && medida.measureText(candidata).width > ancho - 32) {
+            alto += 16;
+            texto(linea);
+            linea = palabra;
+        } else {
+            linea = candidata;
+        }
+    }
+    alto += 16;
+    texto(linea);
+    return alto + 16;
 }
 
 
@@ -4960,6 +5006,7 @@ document.querySelectorAll("[data-menu]").forEach(menu => {
         }
     });
     menu.addEventListener("click", evento => {
+        evento.stopPropagation();
         if (evento.target.closest("[data-descarga]")) {
             boton.focus();
         }
@@ -5005,6 +5052,7 @@ function mostrarMetricas(vista, anio, filas, destacada) {
     }
 }
 
+const datosExportacionProyeccion = new WeakMap();
 const indicadorProyeccion = document.getElementById("indicador-proyeccion");
 const bibliotecaProyeccion = document.getElementById("biblioteca-proyeccion");
 const periodoProyeccion = document.getElementById("periodo-proyeccion");
@@ -5182,6 +5230,13 @@ function renderizarProyeccion() {
         agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}. Intervalo: ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`);
     }
     banda.lastChild.textContent = ` La línea discontinua muestra la proyección. La banda sombreada indica el intervalo de predicción estimado del ${nivel} % para cada año. Los valores reales pueden quedar fuera.`;
+    const valoresObservados = new Map(serie.map(p => [p.anio, p.valor]));
+    const aniosUsados = new Set(puntos.map(p => p.anio));
+    const observaciones = obtenerSeleccionados("anioCheck").sort().map(codigo => {
+        const anio = Number(codigo);
+        return { anio, valor: valoresObservados.get(anio) ?? null, usado: aniosUsados.has(anio) };
+    });
+    datosExportacionProyeccion.set(svg, { observaciones, futuros });
     banda.hidden = false;
     grafico.append(svg);
     grafico.hidden = false;
