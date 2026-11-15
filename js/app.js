@@ -3828,17 +3828,18 @@ function svgExportable(tipoVista) {
         alto += 30;
     }
 
-    const indicador = document.getElementById("indicador-" + tipoVista);
-    const nombreIndicador = indicador.selectedOptions[0]?.textContent || "";
-    agregarElementoSVG(clon, "text", {
-        x: 16, y: alto + 19, class: "grafico-texto"
-    }, nombreIndicador);
-    agregarElementoSVG(clon, "text", {
-        x: 16, y: alto + 37, class: "grafico-texto"
-    }, `${periodoExportacion(tipoVista)} · Fuente: Estadísticas REBIUN`);
-    alto += 48;
     if (tipoVista === "proyeccion") {
-        alto = anexarDatosProyeccionPNG(clon, original, ancho, alto);
+        alto = integrarContextoProyeccionPNG(clon, ancho, alto);
+    } else {
+        const indicador = document.getElementById("indicador-" + tipoVista);
+        const nombreIndicador = indicador.selectedOptions[0]?.textContent || "";
+        agregarElementoSVG(clon, "text", {
+            x: 16, y: alto + 19, class: "grafico-texto"
+        }, nombreIndicador);
+        agregarElementoSVG(clon, "text", {
+            x: 16, y: alto + 37, class: "grafico-texto"
+        }, `${periodoExportacion(tipoVista)} · Fuente: Estadísticas REBIUN`);
+        alto += 48;
     }
 
     clon.setAttribute("viewBox", `0 0 ${ancho} ${alto}`);
@@ -3860,62 +3861,67 @@ function svgExportable(tipoVista) {
 }
 
 
-function anexarDatosProyeccionPNG(svg, original, ancho, alto) {
-    const { observaciones, futuros } = datosExportacionProyeccion.get(original);
-    const texto = (valor, x = 16, negrita = false) => agregarElementoSVG(svg, "text", {
-        x, y: alto, class: "grafico-texto", style: negrita ? "font-weight:700" : ""
-    }, valor);
+function integrarContextoProyeccionPNG(svg, ancho, alto) {
+    const trazado = agregarElementoSVG(svg, "g", { class: "trazado-proyeccion-exportado" });
+    for (const elemento of [...svg.children]) {
+        if (elemento !== trazado && elemento.localName !== "style") trazado.append(elemento);
+    }
 
+    let cursor = 26;
+    const medida = document.createElement("canvas").getContext("2d");
+    const escribir = (contenido, tamano, peso = 400) => {
+        medida.font = `${peso} ${tamano}px Arial, sans-serif`;
+        let linea = "";
+        const dibujar = texto => {
+            agregarElementoSVG(svg, "text", {
+                x: 24, y: cursor, fill: "#142841", "font-family": "Arial, sans-serif",
+                "font-size": tamano, "font-weight": peso
+            }, texto);
+            cursor += tamano + 6;
+        };
+        for (const palabra of contenido.split(/\s+/)) {
+            const candidata = linea ? `${linea} ${palabra}` : palabra;
+            if (linea && medida.measureText(candidata).width > ancho - 48) {
+                dibujar(linea);
+                linea = palabra;
+            } else {
+                linea = candidata;
+            }
+        }
+        if (linea) dibujar(linea);
+    };
+
+    const indicador = indicadorProyeccion.selectedOptions[0]?.textContent || "";
     const biblioteca = bibliotecaProyeccion.selectedOptions[0]?.textContent || "";
     const metodo = metodoProyeccion.selectedOptions[0]?.textContent || "";
-    const periodo = periodoProyeccion.selectedOptions[0]?.textContent || "";
-    alto += 6;
-    texto(biblioteca, 16, true);
-    alto += 18;
-    texto(`${metodo} · ${periodo} · Horizonte: ${horizonteProyeccion.value} ${horizonteProyeccion.value === "1" ? "año" : "años"} · Intervalo estimado del ${nivelProyeccion.value} %`);
+    escribir(`Proyección · ${indicador}`, 18, 700);
+    escribir(`${biblioteca} · ${metodo}`, 13);
+    escribir(`Línea continua: datos observados · Línea discontinua: proyección · Banda: intervalo estimado del ${nivelProyeccion.value} %`, 12);
+    escribir("Fuente: Estadísticas REBIUN", 11);
+    trazado.setAttribute("transform", `translate(0 ${cursor - 4})`);
 
-    alto += 26;
-    texto("Serie observada de la consulta", 16, true);
-    alto += 20;
-    ["Año", "Valor observado", "Usado para proyectar"].forEach((valor, i) => texto(valor, [16, 110, 300][i], true));
-    for (const { anio, valor, usado } of observaciones) {
-        alto += 16;
-        texto(String(anio));
-        texto(valor === null ? "Sin dato" : formatearValor(valor), 110);
-        texto(usado ? "Sí" : "No", 300);
-    }
-
-    alto += 26;
-    texto("Proyección por año", 16, true);
-    alto += 20;
-    ["Año", "Valor proyectado", "Límite inferior", "Límite superior"].forEach((valor, i) => texto(valor, [16, 110, 300, 490][i], true));
-    for (const { anio, valor, inferior, superior } of futuros) {
-        alto += 16;
-        texto(String(anio));
-        texto(formatearValor(valor), 110);
-        texto(formatearValor(inferior), 300);
-        texto(formatearValor(superior), 490);
-    }
-
-    alto += 26;
-    texto("Prueba histórica", 16, true);
-    const medida = document.createElement("canvas").getContext("2d");
-    medida.font = "12px 'Segoe UI', Arial, sans-serif";
-    const palabras = document.getElementById("validacion-proyeccion").textContent.split(/\s+/);
-    let linea = "";
-    for (const palabra of palabras) {
-        const candidata = linea ? `${linea} ${palabra}` : palabra;
-        if (linea && medida.measureText(candidata).width > ancho - 32) {
-            alto += 16;
-            texto(linea);
-            linea = palabra;
-        } else {
-            linea = candidata;
+    if (incluirValoresExportacion("proyeccion")) {
+        for (const punto of trazado.querySelectorAll("[data-valor-observado]")) {
+            agregarElementoSVG(trazado, "text", {
+                x: punto.getAttribute("cx"), y: Number(punto.getAttribute("cy")) - 9,
+                "text-anchor": "middle", class: "valor-exportacion"
+            }, punto.dataset.valorObservado);
+        }
+        for (const punto of trazado.querySelectorAll("[data-valor-exportacion]")) {
+            const centro = Number(punto.getAttribute("cy"));
+            for (const [valor, posicion] of [
+                [punto.dataset.limiteSuperior, Math.min(Number(punto.dataset.ySuperior) - 8, centro - 23)],
+                [punto.dataset.limiteInferior, Number(punto.dataset.yInferior) + 14]
+            ]) {
+                agregarElementoSVG(trazado, "text", {
+                    x: punto.getAttribute("cx"), y: posicion,
+                    "text-anchor": "middle", fill: "#315761", "font-size": 10, "font-family": "Arial, sans-serif"
+                }, valor);
+            }
         }
     }
-    alto += 16;
-    texto(linea);
-    return alto + 16;
+
+    return alto + cursor - 4;
 }
 
 
@@ -5052,7 +5058,6 @@ function mostrarMetricas(vista, anio, filas, destacada) {
     }
 }
 
-const datosExportacionProyeccion = new WeakMap();
 const indicadorProyeccion = document.getElementById("indicador-proyeccion");
 const bibliotecaProyeccion = document.getElementById("biblioteca-proyeccion");
 const periodoProyeccion = document.getElementById("periodo-proyeccion");
@@ -5208,7 +5213,10 @@ function renderizarProyeccion() {
         if (anterior?.anio === p.anio - 1) {
             agregarElementoSVG(svg, "line", { x1: x(anterior.anio), y1: y(anterior.valor), x2: x(p.anio), y2: y(p.valor), stroke: "#14636a", "stroke-width": 2.5 });
         }
-        const punto = agregarElementoSVG(svg, "circle", { cx: x(p.anio), cy: y(p.valor), r: 4, fill: "#14636a" });
+        const punto = agregarElementoSVG(svg, "circle", {
+            cx: x(p.anio), cy: y(p.valor), r: 4, fill: "#14636a",
+            "data-valor-observado": formatearValor(p.valor)
+        });
         agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}`);
     });
     const origen = `${x(corte)},${y(puntos.at(-1).valor)}`;
@@ -5225,18 +5233,13 @@ function renderizarProyeccion() {
     for (const p of futuros) {
         const punto = agregarElementoSVG(svg, "circle", {
             cx: x(p.anio), cy: y(p.valor), r: 5, fill: "#fff", stroke: "#14636a", "stroke-width": 2,
-            "data-valor-exportacion": formatearValor(p.valor)
+            "data-valor-exportacion": formatearValor(p.valor),
+            "data-limite-superior": formatearValor(p.superior), "data-y-superior": y(p.superior),
+            "data-limite-inferior": formatearValor(p.inferior), "data-y-inferior": y(p.inferior)
         });
         agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}. Intervalo: ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`);
     }
     banda.lastChild.textContent = ` La línea discontinua muestra la proyección. La banda sombreada indica el intervalo de predicción estimado del ${nivel} % para cada año. Los valores reales pueden quedar fuera.`;
-    const valoresObservados = new Map(serie.map(p => [p.anio, p.valor]));
-    const aniosUsados = new Set(puntos.map(p => p.anio));
-    const observaciones = obtenerSeleccionados("anioCheck").sort().map(codigo => {
-        const anio = Number(codigo);
-        return { anio, valor: valoresObservados.get(anio) ?? null, usado: aniosUsados.has(anio) };
-    });
-    datosExportacionProyeccion.set(svg, { observaciones, futuros });
     banda.hidden = false;
     grafico.append(svg);
     grafico.hidden = false;
