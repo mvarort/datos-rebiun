@@ -3664,6 +3664,44 @@ function incluirValoresExportacion(tipoVista) {
     return document.getElementById(`valores-exportacion-${tipoVista}`).checked;
 }
 
+function distribuirEtiquetasExportacion(svg, etiquetas, margenInferior) {
+    const [, , ancho, alto] = svg.getAttribute("viewBox").split(/\s+/).map(Number);
+    const medida = document.createElement("canvas").getContext("2d");
+    medida.font = "600 10px Arial, sans-serif";
+    const colocadas = [];
+
+    etiquetas.sort((a, b) => a.x - b.x).forEach(({ x, y, valor, etiqueta }, indice) => {
+        const mitad = Math.ceil(medida.measureText(valor).width / 2) + 3;
+        const centro = Math.max(mitad + 4, Math.min(ancho - mitad - 4, x));
+        const direcciones = indice % 2 ? [1, -1] : [-1, 1];
+        const base = alto - margenInferior;
+        for (let distancia = 0; distancia <= alto; distancia += 14) {
+            for (const direccion of direcciones) {
+                const linea = y + (direccion < 0 ? -9 - distancia : 17 + distancia);
+                const caja = { izquierda: centro - mitad, derecha: centro + mitad, arriba: linea - 11, abajo: linea + 3 };
+                if (caja.arriba < 2 || caja.abajo > base || colocadas.some(otra =>
+                    caja.izquierda < otra.derecha && caja.derecha > otra.izquierda &&
+                    caja.arriba < otra.abajo && caja.abajo > otra.arriba
+                )) continue;
+
+                if (etiqueta) {
+                    etiqueta.removeAttribute("hidden");
+                    etiqueta.setAttribute("x", centro);
+                    etiqueta.setAttribute("y", linea);
+                    etiqueta.classList.add("valor-exportacion");
+                } else {
+                    agregarElementoSVG(svg, "text", {
+                        x: centro, y: linea, "text-anchor": "middle", class: "valor-exportacion"
+                    }, valor);
+                }
+                colocadas.push(caja);
+                return;
+            }
+        }
+        etiqueta?.remove();
+    });
+}
+
 function rotularValoresExportacion(svg, tipoVista) {
     if (!incluirValoresExportacion(tipoVista)) {
         svg.querySelectorAll(".valor-barra-comparacion").forEach(etiqueta => etiqueta.remove());
@@ -3672,34 +3710,34 @@ function rotularValoresExportacion(svg, tipoVista) {
 
     const destacados = [...svg.querySelectorAll('[data-valor-destacado]:not([data-valor-destacado=""])')];
     // La gráfica de líneas ya etiqueta el último punto destacado.
-    if (destacados.length <= 5) {
-        for (const punto of destacados.slice(0, -1)) {
-            agregarElementoSVG(svg, "text", {
-                x: punto.getAttribute("cx"), y: Math.max(12, Number(punto.getAttribute("cy")) - 9),
-                "text-anchor": "middle", class: "valor-exportacion"
-            }, punto.dataset.valorDestacado);
-        }
+    const puntos = destacados.length <= 5 ? destacados.slice(0, -1) : [];
+    puntos.push(...svg.querySelectorAll("circle[data-valor-observado], circle[data-valor-exportacion]"));
+    const etiquetas = puntos.map(punto => ({
+        x: Number(punto.getAttribute("cx")),
+        y: Number(punto.getAttribute("cy")),
+        valor: punto.dataset.valorObservado ?? punto.dataset.valorExportacion ?? punto.dataset.valorDestacado
+    }));
+    if (tipoVista === "comparacion" && orientacionComparacionSelect.value === "vertical") {
+        etiquetas.push(...[...svg.querySelectorAll(".valor-barra-comparacion")].map(etiqueta => ({
+            x: Number(etiqueta.getAttribute("x")),
+            y: Number(etiqueta.getAttribute("y")) + 7,
+            valor: etiqueta.textContent, etiqueta
+        })));
     }
+    distribuirEtiquetasExportacion(svg, etiquetas, tipoVista === "comparacion" ? 145 : 35);
 
-    for (const marca of svg.querySelectorAll("[data-valor-exportacion]")) {
+    for (const marca of svg.querySelectorAll("rect[data-valor-exportacion]")) {
         const valor = marca.dataset.valorExportacion;
-        if (marca.tagName === "rect") {
-            const x = Number(marca.getAttribute("x")) + Number(marca.getAttribute("width")) / 2;
-            const y = Number(marca.getAttribute("y"));
-            const dentro = Number(marca.getAttribute("height")) > valor.length * 6 + 12;
-            const origen = y + (dentro ? 6 : -4);
-            agregarElementoSVG(svg, "text", {
-                x, y: origen, transform: `rotate(-90 ${x} ${origen})`,
-                "text-anchor": dentro ? "end" : "start",
-                "dominant-baseline": "central",
-                class: dentro ? "valor-exportacion valor-exportacion-interior" : "valor-exportacion"
-            }, valor);
-        } else {
-            agregarElementoSVG(svg, "text", {
-                x: marca.getAttribute("cx"), y: Math.max(12, Number(marca.getAttribute("cy")) - 9),
-                "text-anchor": "middle", class: "valor-exportacion"
-            }, valor);
-        }
+        const x = Number(marca.getAttribute("x")) + Number(marca.getAttribute("width")) / 2;
+        const y = Number(marca.getAttribute("y"));
+        const dentro = Number(marca.getAttribute("height")) > valor.length * 6 + 12;
+        const origen = y + (dentro ? 6 : -4);
+        agregarElementoSVG(svg, "text", {
+            x, y: origen, transform: `rotate(-90 ${x} ${origen})`,
+            "text-anchor": dentro ? "end" : "start",
+            "dominant-baseline": "central",
+            class: dentro ? "valor-exportacion valor-exportacion-interior" : "valor-exportacion"
+        }, valor);
     }
 }
 
@@ -3737,8 +3775,8 @@ function svgExportable(tipoVista) {
         ".grafico-texto{fill:#333;font:12px 'Segoe UI',Arial,sans-serif}" +
         ".grafico-etiqueta-barra{font-size:11px}" +
         ".grafico-etiqueta-promedio{fill:#8E9797;font-size:11px;font-weight:500}" +
-        ".valor-exportacion{fill:#142841;font:600 10px Arial,sans-serif}" +
-        ".valor-exportacion-interior{fill:#fff}" +
+        ".valor-exportacion{fill:#142841;font:600 10px Arial,sans-serif;paint-order:stroke;stroke:#fff;stroke-width:2px;stroke-linejoin:round}" +
+        ".valor-exportacion-interior{fill:#fff;stroke:none}" +
         ".grafico-eje{stroke:#899796;stroke-width:1}" +
         ".grafico-guia{stroke:#e4ebea;stroke-width:1}";
     clon.insertBefore(estilo, clon.firstChild);
@@ -3899,15 +3937,6 @@ function integrarContextoProyeccionPNG(svg, ancho, alto) {
     escribir(`Línea continua: datos observados · Línea discontinua: proyección · Banda: intervalo estimado del ${nivelProyeccion.value} %`, 12);
     escribir("Fuente: Estadísticas REBIUN", 11);
     trazado.setAttribute("transform", `translate(0 ${cursor - 4})`);
-
-    if (incluirValoresExportacion("proyeccion")) {
-        for (const punto of trazado.querySelectorAll("[data-valor-observado]")) {
-            agregarElementoSVG(trazado, "text", {
-                x: punto.getAttribute("cx"), y: Number(punto.getAttribute("cy")) - 9,
-                "text-anchor": "middle", class: "valor-exportacion"
-            }, punto.dataset.valorObservado);
-        }
-    }
 
     return alto + cursor - 4;
 }

@@ -2732,9 +2732,14 @@ td {
 
 .valor-exportacion {
     fill: #142841;
+    paint-order: stroke;
+    stroke: #fff;
+    stroke-width: 2px;
+    stroke-linejoin: round;
     font: 600 10px Arial, sans-serif;
 }
 
 .valor-exportacion-interior {
     fill: #fff;
+    stroke: none;
 }
