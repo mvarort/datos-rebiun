@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REBIUN Data Explorer | Estadísticas REBIUN</title>
-    <link rel="stylesheet" href="css/estilos.css?v=etiquetas-legibles">
+    <link rel="stylesheet" href="css/estilos.css?v=tabla-compacta">
 </head>
 
 <body class="prueba-rediseno">
@@ -513,6 +513,15 @@
                     </select>
                 </div>
 
+                <fieldset class="selector-modo-comparacion">
+                    <legend>Modo de evolución</legend>
+                    <div class="chips-anios" role="group" aria-label="Modo de evolución">
+                        <button type="button" class="chip-anio activo" data-modo-evolucion="absoluto" aria-pressed="true">Valores absolutos</button>
+                        <button type="button" class="chip-anio" data-modo-evolucion="por-usuario" aria-pressed="false">Por persona usuaria propia</button>
+                        <span class="ayuda-normalizacion" tabindex="0" aria-label="Divide el valor entre las personas usuarias propias de la misma biblioteca y del mismo año." title="Divide el valor entre las personas usuarias propias de la misma biblioteca y del mismo año.">ⓘ</span>
+                    </div>
+                </fieldset>
+
                 <label class="control-promedio">
                     <input type="checkbox" id="mostrar-promedio-evolucion">
                     Mostrar promedio
@@ -689,7 +698,7 @@
     aria-hidden="true">
 </section>
 
-<script src="js/app.js?v=tabla-codigo-tecnico"></script>
+<script src="js/app.js?v=evolucion-por-usuario"></script>
 
 </body>
 

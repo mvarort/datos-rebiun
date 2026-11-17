@@ -92,6 +92,9 @@ const botonesModoComparacion = [
 
 let modoComparacion = "absoluto";
 
+const botonesModoEvolucion = document.querySelectorAll("[data-modo-evolucion]");
+let modoEvolucion = "absoluto";
+
 const mostrarPromedioEvolucion =
     document.getElementById("mostrar-promedio-evolucion");
 
@@ -2658,6 +2661,17 @@ function obtenerNumeroValor(valor) {
 }
 
 
+function obtenerValorGrafico(fila, normalizado) {
+    const valor = obtenerNumeroValor(fila.Valor);
+    if (!normalizado || valor === null) return valor;
+
+    const denominador = indiceUsuariosPropios.get(fila.Codigo_Biblioteca_REBIUN)?.get(fila.Anio);
+    return Number.isFinite(denominador) && denominador > 0
+        ? valor / denominador
+        : null;
+}
+
+
 function calcularPromedioFilas(filas) {
 
     const valores = filas
@@ -3084,9 +3098,21 @@ function renderizarEvolucion() {
     mostrarPromedioEvolucion.disabled = formatoEvolucion.value === "barras";
     mostrarPromedioEvolucion.closest("label").hidden = mostrarPromedioEvolucion.disabled;
     const codigo = indicadorEvolucionSelect.value;
-    const filas = datosActuales.filter(
-        fila => fila.Codigo_Tecnico === codigo
-    );
+    const indicadorPropio = codigo === "NUSUARIOPROP";
+    if (indicadorPropio) modoEvolucion = "absoluto";
+    const normalizado = modoEvolucion === "por-usuario";
+
+    botonesModoEvolucion.forEach(boton => {
+        const activo = boton.dataset.modoEvolucion === modoEvolucion;
+        boton.disabled = indicadorPropio && boton.dataset.modoEvolucion === "por-usuario";
+        boton.classList.toggle("activo", activo);
+        boton.setAttribute("aria-pressed", String(activo));
+    });
+
+    const filasIndicador = datosActuales.filter(fila => fila.Codigo_Tecnico === codigo);
+    const filas = normalizado
+        ? filasIndicador.map(fila => ({ ...fila, Valor: obtenerValorGrafico(fila, true) }))
+        : filasIndicador;
     const anios = [
         ...new Set(datosActuales.map(fila => fila.Anio))
     ].sort((a, b) => Number(a) - Number(b));
@@ -3101,7 +3127,7 @@ function renderizarEvolucion() {
     const cantidadBibliotecas = new Set(conDato.map(fila => fila.Codigo_Biblioteca_REBIUN)).size;
     const periodo = anios.length > 1 ? `${anios[0]}–${anios.at(-1)}` : anios[0];
     document.getElementById("cobertura-evolucion").textContent = cantidadBibliotecas
-        ? `${periodo} · ${cantidadBibliotecas} ${cantidadBibliotecas === 1 ? "biblioteca" : "bibliotecas"} con dato`
+        ? `${periodo} · ${cantidadBibliotecas} ${cantidadBibliotecas === 1 ? "biblioteca" : "bibliotecas"} con dato${normalizado ? " · Por persona usuaria propia" : ""}`
         : "";
 
     graficoEvolucionElemento.innerHTML = "";
@@ -3401,23 +3427,7 @@ function renderizarComparacion() {
         .map(fila => ({
             biblioteca: fila.Biblioteca,
             codigoBiblioteca: fila.Codigo_Biblioteca_REBIUN,
-            valor: obtenerNumeroValor(fila.Valor),
-            denominador: normalizado
-                ? indiceUsuariosPropios
-                    .get(fila.Codigo_Biblioteca_REBIUN)
-                    ?.get(fila.Anio)
-                : null
-        }))
-        .map(barra => ({
-            biblioteca: barra.biblioteca,
-            codigoBiblioteca: barra.codigoBiblioteca,
-            valor: normalizado
-                ? Number.isFinite(barra.valor) &&
-                    Number.isFinite(barra.denominador) &&
-                    barra.denominador > 0
-                    ? barra.valor / barra.denominador
-                    : null
-                : barra.valor
+            valor: obtenerValorGrafico(fila, normalizado)
         }))
         .filter(barra => Number.isFinite(barra.valor))
         .map(barra => ({
@@ -3743,7 +3753,10 @@ function periodoExportacion(tipoVista) {
         return `${anioComparacionActivo}${modoComparacion === "por-usuario" ? " · Por persona usuaria propia" : ""}`;
     }
     const anios = obtenerSeleccionados("anioCheck").sort();
-    return anios.join(", ");
+    const periodo = anios.join(", ");
+    return tipoVista === "evolucion" && modoEvolucion === "por-usuario"
+        ? `${periodo} · Por persona usuaria propia`
+        : periodo;
 }
 
 function svgExportable(tipoVista) {
@@ -4166,6 +4179,13 @@ mostrarPromedioEvolucion.addEventListener(
     renderizarEvolucion
 );
 
+botonesModoEvolucion.forEach(boton => {
+    boton.addEventListener("click", () => {
+        modoEvolucion = boton.dataset.modoEvolucion;
+        renderizarEvolucion();
+    });
+});
+
 indicadorComparacionSelect.addEventListener(
     "change",
     () => {
@@ -4566,7 +4586,6 @@ function construirTabla(filtrados, campoFila, campoColumna) {
 
     const terceraDimension = ["Biblioteca", "Anio", campoIndicador]
         .find(campo => campo !== campoFila && campo !== campoColumna);
-    const desglosarIndicadores = terceraDimension === campoIndicador;
     const rotulo = (campo, clave) => campo === campoIndicador ? etiquetas.get(clave) : clave;
     const comparar = (campo, a, b) =>
         rotulo(campo, a).localeCompare(rotulo(campo, b), "es", { numeric: true });
@@ -4575,7 +4594,7 @@ function construirTabla(filtrados, campoFila, campoColumna) {
     const porFila = new Map();
     filtrados.forEach(registro => {
         const fila = registro[campoFila];
-        const subfila = desglosarIndicadores ? registro[campoIndicador] : "";
+        const subfila = registro[terceraDimension];
         const columna = registro[campoColumna];
 
         if (!porFila.has(fila)) porFila.set(fila, new Map());
@@ -4589,34 +4608,33 @@ function construirTabla(filtrados, campoFila, campoColumna) {
     const columnas = ordenar(campoColumna, valoresUnicos(campoColumna, filtrados));
     const cabeceras = [
         nombreDimension(campoFila),
-        ...(desglosarIndicadores ? [nombreDimension(campoIndicador)] : []),
+        nombreDimension(terceraDimension),
         ...columnas.map(columna => rotulo(campoColumna, columna))
     ].map(texto => `<th scope="col">${escaparHTML(texto)}</th>`).join("");
 
-    const cuerpo = ordenar(campoFila, valoresUnicos(campoFila, filtrados)).map(fila => {
+    const cuerpo = ordenar(campoFila, [...porFila.keys()]).map(fila => {
         const subfilas = porFila.get(fila);
-        const claves = desglosarIndicadores ? ordenar(campoIndicador, [...subfilas.keys()]) : [""];
-        return claves.map(clave => {
+        const claves = ordenar(terceraDimension, [...subfilas.keys()]);
+        const grupo = claves.map((clave, indice) => {
             const celdas = subfilas.get(clave);
             const valores = columnas.map(columna => {
                 const registros = celdas.get(columna) || [];
-                const contenido = registros.length <= 1
-                    ? formatearValor(registros[0]?.Valor)
-                    : registros
-                        .sort((a, b) => comparar(terceraDimension, a[terceraDimension], b[terceraDimension]))
-                        .map(registro =>
-                            `<div class="dato-celda">` +
-                            `<span class="dato-etiqueta">${escaparHTML(rotulo(terceraDimension, registro[terceraDimension]))}</span>` +
-                            `<span class="dato-valor">${formatearValor(registro.Valor)}</span></div>`
-                        ).join("");
-                return `<td>${contenido}</td>`;
+                const contenido = registros.map(registro => formatearValor(registro.Valor))
+                    .filter(valor => valor !== "").join("<br>");
+                return contenido
+                    ? `<td class="tabla-valor">${contenido}</td>`
+                    : '<td class="tabla-valor tabla-sin-dato" aria-label="Sin dato">—</td>';
             }).join("");
-            const indicador = desglosarIndicadores ? `<td>${escaparHTML(etiquetas.get(clave))}</td>` : "";
-            return `<tr><td>${escaparHTML(rotulo(campoFila, fila))}</td>${indicador}${valores}</tr>`;
+            const rotuloGrupo = indice === 0
+                ? `<th scope="rowgroup" rowspan="${claves.length}">${escaparHTML(rotulo(campoFila, fila))}</th>`
+                : "";
+            const rotuloFila = `<th scope="row">${escaparHTML(rotulo(terceraDimension, clave))}</th>`;
+            return `<tr>${rotuloGrupo}${rotuloFila}${valores}</tr>`;
         }).join("");
+        return `<tbody>${grupo}</tbody>`;
     }).join("");
 
-    return `<table><thead><tr>${cabeceras}</tr></thead><tbody>${cuerpo}</tbody></table>`;
+    return `<table class="tabla-resultados"><thead><tr>${cabeceras}</tr></thead>${cuerpo}</table>`;
 }
 
 

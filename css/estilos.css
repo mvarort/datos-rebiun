@@ -2743,3 +2743,59 @@ td {
     fill: #fff;
     stroke: none;
 }
+
+/* Tabla de resultados */
+#tabla .tabla-resultados th {
+    white-space: normal;
+    text-align: left;
+}
+
+#tabla .tabla-resultados thead th:nth-child(n+3) {
+    min-width: 5rem;
+    text-align: right;
+}
+
+#tabla .tabla-resultados th[scope="rowgroup"],
+#tabla .tabla-resultados th[scope="row"] {
+    min-width: 8rem;
+    font-weight: 500;
+    vertical-align: top;
+}
+
+#tabla .tabla-resultados th[scope="rowgroup"] {
+    width: 18rem;
+    background: #EDF2F4;
+    font-weight: 600;
+}
+
+#tabla .tabla-resultados tbody:nth-of-type(even) td,
+#tabla .tabla-resultados tbody:nth-of-type(even) th[scope="row"] {
+    background: #F3F6F7;
+}
+
+#tabla .tabla-resultados .tabla-valor {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+#tabla .tabla-resultados .tabla-sin-dato {
+    color: var(--color-text-secondary);
+}
+
+@media screen {
+    #tabla {
+        max-height: 65vh;
+        overflow: auto;
+    }
+
+    #tabla .tabla-resultados {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    #tabla .tabla-resultados thead th {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+}
