@@ -171,9 +171,6 @@ Promise.all([
                 fila.Biblioteca,
                 fila.Codigo_Biblioteca_REBIUN
             );
-
-        fila.IndicadorEtiqueta =
-            `${fila.Codigo_REBIUN} ${fila.Indicador}`;
     });
 
 
@@ -2611,7 +2608,7 @@ function nombreDimension(campo) {
         Anio:
             "Año",
 
-        IndicadorEtiqueta:
+        Codigo_Tecnico:
             "Indicador"
     };
 
@@ -4530,207 +4527,7 @@ function generarTabla() {
     }
 
 
-    const filas =
-        valoresUnicos(
-            campoFila,
-            filtrados
-        );
-
-
-    const columnas =
-        valoresUnicos(
-            campoColumna,
-            filtrados
-        );
-
-
-    const dimensiones = [
-        "Biblioteca",
-        "Anio",
-        "IndicadorEtiqueta"
-    ];
-
-
-    const terceraDimension =
-        dimensiones.find(
-            d =>
-                d !== campoFila &&
-                d !== campoColumna
-        );
-
-
-    // MAPA_CELDAS_OPTIMIZADO
-    //
-    // Se agrupan los registros una sola vez por
-    // fila y columna. Así evitamos recorrer
-    // filtrados completo para cada celda.
-
-    const mapaCeldas =
-        new Map();
-
-
-    filtrados.forEach(d => {
-
-        const claveFila =
-            d[campoFila];
-
-        const claveColumna =
-            d[campoColumna];
-
-
-        let mapaFila =
-            mapaCeldas.get(
-                claveFila
-            );
-
-
-        if (!mapaFila) {
-
-            mapaFila =
-                new Map();
-
-            mapaCeldas.set(
-                claveFila,
-                mapaFila
-            );
-        }
-
-
-        let registrosCelda =
-            mapaFila.get(
-                claveColumna
-            );
-
-
-        if (!registrosCelda) {
-
-            registrosCelda = [];
-
-            mapaFila.set(
-                claveColumna,
-                registrosCelda
-            );
-        }
-
-
-        registrosCelda.push(d);
-    });
-
-
-    let html =
-        "<table>";
-
-
-    html +=
-        `<thead><tr><th>${nombreDimension(campoFila)}</th>`;
-
-
-    columnas.forEach(
-        columna => {
-
-            html +=
-                `<th>${escaparHTML(columna)}</th>`;
-        }
-    );
-
-
-    html +=
-        "</tr></thead><tbody>";
-
-
-    filas.forEach(fila => {
-
-        html +=
-            `<tr><td>${escaparHTML(fila)}</td>`;
-
-
-        columnas.forEach(
-            columna => {
-
-                const mapaFila =
-                    mapaCeldas.get(
-                        fila
-                    );
-
-
-                const registros =
-                    mapaFila
-                        ? (
-                            mapaFila.get(
-                                columna
-                            ) || []
-                        )
-                        : [];
-
-
-                let contenido = "";
-
-
-                if (
-                    registros.length === 1
-                ) {
-
-                    contenido =
-                        formatearValor(
-                            registros[0].Valor
-                        );
-                }
-
-
-                else if (
-                    registros.length > 1
-                ) {
-
-                    registros.sort(
-                        (a, b) =>
-                            a[terceraDimension]
-                                .localeCompare(
-                                    b[terceraDimension],
-                                    "es",
-                                    { numeric: true }
-                                )
-                    );
-
-
-                    // DATO_CELDA_ESTRUCTURADO
-                    //
-                    // Cada registro se presenta como una pequeña fila
-                    // dentro de la celda: etiqueta a la izquierda y
-                    // valor alineado a la derecha.
-
-                    contenido =
-                        registros
-
-                            .map(r =>
-                                `<div class="dato-celda">` +
-                                    `<span class="dato-etiqueta">${escaparHTML(
-                                        r[terceraDimension]
-                                    )}</span>` +
-                                    `<span class="dato-valor">${formatearValor(
-                                        r.Valor
-                                    )}</span>` +
-                                `</div>`
-                            )
-
-                            .join("");
-                }
-
-
-                html +=
-                    `<td>${contenido}</td>`;
-            }
-        );
-
-
-        html += "</tr>";
-    });
-
-
-    html +=
-        "</tbody></table>";
-
-
-    tablaElemento.innerHTML = html;
+    tablaElemento.innerHTML = construirTabla(filtrados, campoFila, campoColumna);
 
 
     resumenElemento.textContent =
@@ -4752,6 +4549,75 @@ function generarTabla() {
     botonDescargar.disabled = false;
 }
 
+
+
+function construirTabla(filtrados, campoFila, campoColumna) {
+    const campoIndicador = "Codigo_Tecnico";
+    const codigos = valoresUnicos(campoIndicador, filtrados);
+    const etiquetas = new Map(codigos.map(codigo => {
+        for (const anio of metadatosDatos.anios) {
+            const indicador = metadatosDatos.indicadoresPorAnio.get(anio)?.get(codigo);
+            if (indicador) {
+                return [codigo, `${indicador.Codigo_REBIUN} ${indicador.Indicador}`];
+            }
+        }
+        return [codigo, codigo];
+    }));
+
+    const terceraDimension = ["Biblioteca", "Anio", campoIndicador]
+        .find(campo => campo !== campoFila && campo !== campoColumna);
+    const desglosarIndicadores = terceraDimension === campoIndicador;
+    const rotulo = (campo, clave) => campo === campoIndicador ? etiquetas.get(clave) : clave;
+    const comparar = (campo, a, b) =>
+        rotulo(campo, a).localeCompare(rotulo(campo, b), "es", { numeric: true });
+    const ordenar = (campo, claves) => claves.sort((a, b) => comparar(campo, a, b));
+
+    const porFila = new Map();
+    filtrados.forEach(registro => {
+        const fila = registro[campoFila];
+        const subfila = desglosarIndicadores ? registro[campoIndicador] : "";
+        const columna = registro[campoColumna];
+
+        if (!porFila.has(fila)) porFila.set(fila, new Map());
+        const subfilas = porFila.get(fila);
+        if (!subfilas.has(subfila)) subfilas.set(subfila, new Map());
+        const celdas = subfilas.get(subfila);
+        if (!celdas.has(columna)) celdas.set(columna, []);
+        celdas.get(columna).push(registro);
+    });
+
+    const columnas = ordenar(campoColumna, valoresUnicos(campoColumna, filtrados));
+    const cabeceras = [
+        nombreDimension(campoFila),
+        ...(desglosarIndicadores ? [nombreDimension(campoIndicador)] : []),
+        ...columnas.map(columna => rotulo(campoColumna, columna))
+    ].map(texto => `<th scope="col">${escaparHTML(texto)}</th>`).join("");
+
+    const cuerpo = ordenar(campoFila, valoresUnicos(campoFila, filtrados)).map(fila => {
+        const subfilas = porFila.get(fila);
+        const claves = desglosarIndicadores ? ordenar(campoIndicador, [...subfilas.keys()]) : [""];
+        return claves.map(clave => {
+            const celdas = subfilas.get(clave);
+            const valores = columnas.map(columna => {
+                const registros = celdas.get(columna) || [];
+                const contenido = registros.length <= 1
+                    ? formatearValor(registros[0]?.Valor)
+                    : registros
+                        .sort((a, b) => comparar(terceraDimension, a[terceraDimension], b[terceraDimension]))
+                        .map(registro =>
+                            `<div class="dato-celda">` +
+                            `<span class="dato-etiqueta">${escaparHTML(rotulo(terceraDimension, registro[terceraDimension]))}</span>` +
+                            `<span class="dato-valor">${formatearValor(registro.Valor)}</span></div>`
+                        ).join("");
+                return `<td>${contenido}</td>`;
+            }).join("");
+            const indicador = desglosarIndicadores ? `<td>${escaparHTML(etiquetas.get(clave))}</td>` : "";
+            return `<tr><td>${escaparHTML(rotulo(campoFila, fila))}</td>${indicador}${valores}</tr>`;
+        }).join("");
+    }).join("");
+
+    return `<table><thead><tr>${cabeceras}</tr></thead><tbody>${cuerpo}</tbody></table>`;
+}
 
 
 /* =========================================================
