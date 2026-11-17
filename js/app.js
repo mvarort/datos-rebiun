@@ -3944,7 +3944,8 @@ function integrarContextoProyeccionPNG(svg, ancho, alto) {
     const metodo = metodoProyeccion.selectedOptions[0]?.textContent || "";
     escribir(`Proyección · ${indicador}`, 18, 700);
     escribir(`${biblioteca} · ${metodo}`, 13);
-    escribir(`Línea continua: datos observados · Línea discontinua: proyección · Banda: intervalo estimado del ${nivelProyeccion.value} %`, 12);
+    escribir(document.getElementById("resultado-proyeccion").dataset.estimacion, 13, 700);
+    escribir(`Línea vertical: último año observado · Línea discontinua: proyección · Banda: intervalo estimado del ${nivelProyeccion.value} %`, 12);
     escribir("Fuente: Estadísticas REBIUN", 11);
     trazado.setAttribute("transform", `translate(0 ${cursor - 4})`);
 
@@ -5028,10 +5029,29 @@ function calcularIntervaloProyeccion(puntos, metodo, nivel) {
         (1 + 1 / n + (anio - media) ** 2 / dispersion));
 }
 
+function validarProyeccion(serie, horizonte, ventana) {
+    const pruebas = serie.map(punto => {
+        const corte = punto.anio - horizonte;
+        const previos = ventana(serie.filter(p => p.anio <= corte), corte);
+        return { punto, corte, previos };
+    }).filter(({ corte, previos }) => previos.length >= 3 && previos.at(-1).anio === corte);
+
+    const errorMedio = metodo => pruebas.reduce((suma, { punto, previos }) =>
+        suma + Math.abs(estimarProyeccion(previos, punto.anio, metodo) - punto.valor), 0) / pruebas.length;
+    return { pruebas, errorMedio };
+}
+
 function renderizarProyeccion() {
     const resultado = document.getElementById("resultado-proyeccion");
     const grafico = document.getElementById("grafico-proyeccion");
     const validacion = document.getElementById("validacion-proyeccion");
+    const calculo = document.getElementById("calculo-proyeccion");
+    const explicacion = document.getElementById("explicacion-proyeccion");
+    const intervalos = document.getElementById("intervalos-proyeccion");
+    const detalleValidacion = document.getElementById("detalle-validacion-proyeccion");
+    calculo.hidden = true;
+    intervalos.hidden = true;
+    detalleValidacion.textContent = "";
     const banda = document.getElementById("banda-proyeccion");
     const rangos = document.getElementById("rangos-proyeccion");
     grafico.replaceChildren();
@@ -5067,30 +5087,29 @@ function renderizarProyeccion() {
         const amplitud = margen(anio);
         return { anio, valor, inferior: valor - amplitud, superior: valor + amplitud };
     });
-    const valor = futuros.at(-1).valor;
-    resultado.textContent = `Proyección ${anio}: ${formatearValor(valor)} · ${metodoProyeccion.selectedOptions[0].textContent} · ${puntos.length} observaciones de ${puntos[0].anio} a ${corte}`;
+    const final = futuros.at(-1);
+    resultado.dataset.estimacion = `Proyección ${anio}: ${formatearValor(final.valor)}`;
+    resultado.textContent = `${resultado.dataset.estimacion} · Intervalo estimado del ${nivel} %: de ${formatearValor(final.inferior)} a ${formatearValor(final.superior)}`;
+    intervalos.querySelector("summary").textContent = `Ver intervalos del ${nivel} % por año`;
     for (const p of futuros) {
         const item = document.createElement("li");
         item.textContent = `${p.anio}: de ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`;
         rangos.append(item);
     }
 
-    const pruebas = serie.filter(p => p.anio === corte || p.anio === corte - 1)
-        .map(p => ({ ...p, previos: ventana(serie.filter(q => q.anio <= p.anio - horizonte), p.anio - horizonte) }))
-        .filter(p => p.previos.length >= 3 && p.previos.at(-1).anio === p.anio - horizonte);
+    const { pruebas, errorMedio } = validarProyeccion(serie, horizonte, ventana);
+    const duracion = horizonte === 1 ? "1 año" : `${horizonte} años`;
     if (pruebas.length) {
-        const error = metodo => formatearValor(pruebas.reduce((suma, p) =>
-            suma + Math.abs(estimarProyeccion(p.previos, p.anio, metodo) - p.valor), 0) / pruebas.length);
-        const duracion = horizonte === 1 ? "1 año" : `${horizonte} años`;
-        const casos = pruebas.length === 1 ? "1 predicción verificada" : `${pruebas.length} predicciones verificadas`;
-        const anios = pruebas.map(p => p.anio).join(", ");
-        const cortes = pruebas.map(p => `${p.anio} con datos hasta ${p.anio - horizonte}`).join(" y ");
-        const desviacion = pruebas.length === 1 ? "Desviación" : "Desviación media";
-        validacion.textContent = `Prueba histórica a ${duracion} · ${casos} (${anios}). ` +
-            `${desviacion} en las unidades del indicador: tendencia lineal ${error("lineal")} · último valor ${error("ultimo")}. ` +
-            `Se estimó ${cortes}.`;
+        const casos = pruebas.length === 1 ? "1 prueba" : `${pruebas.length} pruebas`;
+        const anios = pruebas.map(({ punto }) => punto.anio).join(", ");
+        const error = pruebas.length === 1 ? "Error absoluto" : "Error absoluto medio";
+        validacion.textContent = `${error} a ${duracion} · ${casos} (${anios}). ` +
+            `Tendencia lineal: ${formatearValor(errorMedio("lineal"))} · Último valor observado: ${formatearValor(errorMedio("ultimo"))}. ` +
+            "Los errores se expresan en las unidades del indicador.";
+        const cortes = pruebas.map(({ punto, corte }) => `${punto.anio} con datos hasta ${corte}`).join("; ");
+        detalleValidacion.textContent = `Se comparó cada estimación con el dato real: ${cortes}. El error absoluto mide la distancia entre ambos valores.`;
     } else {
-        validacion.textContent = "No hay suficientes datos para evaluar este horizonte.";
+        validacion.textContent = `No hay suficientes datos para hacer una prueba histórica a ${duracion}.`;
     }
 
     const minimo = Math.min(0, ...futuros.map(p => p.inferior), ...puntos.map(p => p.valor));
@@ -5120,6 +5139,10 @@ function renderizarProyeccion() {
         });
         agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}`);
     });
+    agregarElementoSVG(svg, "line", {
+        x1: x(corte), x2: x(corte), y1: 26, y2: 275,
+        stroke: "#607887", "stroke-dasharray": "3 4"
+    });
     const origen = `${x(corte)},${y(puntos.at(-1).valor)}`;
     const coordenada = (p, campo) => `${x(p.anio)},${y(p[campo])}`;
     agregarElementoSVG(svg, "polygon", {
@@ -5138,7 +5161,14 @@ function renderizarProyeccion() {
         });
         agregarElementoSVG(punto, "title", {}, `${p.anio} · ${formatearValor(p.valor)}. Intervalo: ${formatearValor(p.inferior)} a ${formatearValor(p.superior)}`);
     }
-    banda.lastChild.textContent = ` La línea discontinua muestra la proyección. La banda sombreada indica el intervalo de predicción estimado del ${nivel} % para cada año. Los valores reales pueden quedar fuera.`;
+    banda.lastChild.textContent = ` La línea vertical marca el último año observado. La línea discontinua muestra la proyección. La banda sombreada indica el intervalo estimado del ${nivel} % para cada año. Los valores reales pueden quedar fuera.`;
+    const referencia = `Se usan ${puntos.length} valores observados entre ${puntos[0].anio} y ${corte} para la biblioteca y el indicador elegidos.`;
+    const estimacion = metodo === "lineal"
+        ? "Se ajusta una recta a esos valores y se prolonga hacia los años futuros. La banda se calcula a partir de cuánto se alejaron los datos de esa recta."
+        : `Cada año futuro toma el último valor observado (${formatearValor(puntos.at(-1).valor)}). La banda se calcula a partir de cuánto cambiaron los datos entre observaciones consecutivas.`;
+    explicacion.textContent = `${referencia} ${estimacion} La banda suele ensancharse cuanto más lejos se proyecta.`;
+    calculo.hidden = false;
+    intervalos.hidden = false;
     banda.hidden = false;
     grafico.append(svg);
     grafico.hidden = false;

@@ -657,6 +657,7 @@
                     <select id="horizonte-proyeccion">
                         <option value="1">1 año</option>
                         <option value="3" selected>3 años</option>
+                        <option value="5">5 años</option>
                     </select>
                 </div>
                 <div class="campo"><label for="nivel-proyeccion">Intervalo de predicción</label>
@@ -677,8 +678,16 @@
             <p id="banda-proyeccion" hidden><span aria-hidden="true"></span>
                 Banda sombreada: intervalo de predicción estimado. Línea discontinua: proyección del método seleccionado.
             </p>
-            <ul id="rangos-proyeccion" aria-label="Rango por año"></ul>
-            <p id="validacion-proyeccion"></p>
+            <p id="validacion-proyeccion" role="status"></p>
+            <details id="intervalos-proyeccion" hidden>
+                <summary>Ver intervalos por año</summary>
+                <ul id="rangos-proyeccion" aria-label="Rango por año"></ul>
+            </details>
+            <details id="calculo-proyeccion" hidden>
+                <summary>¿Cómo se calcula la proyección?</summary>
+                <p id="explicacion-proyeccion"></p>
+                <p id="detalle-validacion-proyeccion"></p>
+            </details>
         </div>
 
     </section>
@@ -698,7 +707,7 @@
     aria-hidden="true">
 </section>
 
-<script src="js/app.js?v=evolucion-por-usuario"></script>
+<script src="js/app.js?v=validacion-proyeccion"></script>
 
 </body>
 
